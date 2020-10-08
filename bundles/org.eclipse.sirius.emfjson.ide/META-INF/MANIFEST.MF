@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: %Bundle-Name
+Bundle-SymbolicName: org.eclipse.sirius.emfjson.ide;singleton:=true
+Bundle-Version: 2.3.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-Localization: bundle
+Require-Bundle: org.eclipse.sirius.emfjson;bundle-version="2.1.0",
+ org.eclipse.emf.ecore,
+ org.eclipse.core.contenttype;bundle-version="3.4.200",
+ org.eclipse.core.runtime;bundle-version="3.10.0"
+Export-Package: org.eclipse.sirius.emfjson.ide.internal.describer;version="2.1.0";x-friends:="org.eclipse.sirius.emfjson.tests",
+ org.eclipse.sirius.emfjson.ide.utils;version="2.1.0"
+Bundle-Vendor: %Bundle-Vendor
+Automatic-Module-Name: org.eclipse.sirius.emfjson.ide

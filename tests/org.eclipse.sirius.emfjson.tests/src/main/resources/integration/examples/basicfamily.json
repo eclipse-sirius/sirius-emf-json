@@ -1,0 +1,113 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "ecore": "http://www.eclipse.org/emf/2002/Ecore"
+  },
+  "content": [
+    {
+      "eClass": "ecore:EPackage",
+      "data": {
+        "name": "basicfamily",
+        "nsURI": "http://www.example.org/basicfamily",
+        "nsPrefix": "basicfamily",
+        "eClassifiers": [
+          {
+            "eClass": "ecore:EClass",
+            "data": {
+              "name": "Person",
+              "abstract": true,
+              "eStructuralFeatures": [
+                {
+                  "eClass": "ecore:EAttribute",
+                  "data": {
+                    "name": "name",
+                    "eType": "http://www.eclipse.org/emf/2002/Ecore#//EString"
+                  }
+                },
+                {
+                  "eClass": "ecore:EReference",
+                  "data": {
+                    "name": "children",
+                    "upperBound": -1,
+                    "eType": "//Person",
+                    "eOpposite": "//Person/parents"
+                  }
+                },
+                {
+                  "eClass": "ecore:EReference",
+                  "data": {
+                    "name": "parents",
+                    "upperBound": 2,
+                    "eType": "//Person",
+                    "eOpposite": "//Person/children"
+                  }
+                },
+                {
+                  "eClass": "ecore:EReference",
+                  "data": {
+                    "name": "mother",
+                    "eType": "//Woman",
+                    "derived": true
+                  }
+                },
+                {
+                  "eClass": "ecore:EReference",
+                  "data": {
+                    "name": "father",
+                    "eType": "//Man",
+                    "derived": true
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "eClass": "ecore:EClass",
+            "data": {
+              "name": "Family",
+              "eStructuralFeatures": [
+                {
+                  "eClass": "ecore:EAttribute",
+                  "data": {
+                    "name": "name",
+                    "eType": "http://www.eclipse.org/emf/2002/Ecore#//EString"
+                  }
+                },
+                {
+                  "eClass": "ecore:EReference",
+                  "data": {
+                    "name": "members",
+                    "upperBound": -1,
+                    "eType": "//Person",
+                    "containment": true
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "eClass": "ecore:EClass",
+            "data": {
+              "name": "Man",
+              "eSuperTypes": [
+                "//Person"
+              ]
+            }
+          },
+          {
+            "eClass": "ecore:EClass",
+            "data": {
+              "name": "Woman",
+              "eSuperTypes": [
+                "//Person"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

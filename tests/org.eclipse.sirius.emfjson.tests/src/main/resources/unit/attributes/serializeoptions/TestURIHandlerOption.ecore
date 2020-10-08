@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="ecore" nsURI="http://www.eclipse.org/emf/2002/Ecore" nsPrefix="ecore">
+  <eAnnotations source="boolean"/>
+  <eClassifiers xsi:type="ecore:EClass" name="EClass" eSuperTypes="http://www.eclipse.org/emf/2002/Ecore#//EClass">
+    <eTypeParameters name="aTypeParameter">
+      <eBounds eClassifier="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EByteObject"/>
+    </eTypeParameters>
+    <eOperations name="anOperation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ECharacterObject">
+      <eGenericExceptions eClassifier="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInvocationTargetException"/>
+      <eGenericExceptions eClassifier="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EJavaClass">
+        <eTypeArguments eClassifier="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EEList">
+          <eTypeArguments/>
+        </eTypeArguments>
+      </eGenericExceptions>
+    </eOperations>
+    <eOperations name="otherOperation" eExceptions="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDoubleObject">
+      <eGenericType eTypeParameter="#//EClass/aTypeParameter"/>
+    </eOperations>
+  </eClassifiers>
+</ecore:EPackage>

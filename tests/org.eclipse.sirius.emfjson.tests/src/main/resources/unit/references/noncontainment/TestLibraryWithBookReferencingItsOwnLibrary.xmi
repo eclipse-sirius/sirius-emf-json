@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="ASCII"?>
+<extlib:Library
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:extlib="http:///org/eclipse/emf/examples/library/extlibrary.ecore/1.0.0"
+    xsi:schemaLocation="http:///org/eclipse/emf/examples/library/extlibrary.ecore/1.0.0 extlibrary.ecore"
+    name="library one">
+  <stock xsi:type="extlib:Book"
+      title="book two"
+      library="/"/>
+</extlib:Library>

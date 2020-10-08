@@ -1,0 +1,25 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "extlib": "http:///org/eclipse/emf/examples/library/extlibrary.ecore/1.0.0"
+  },
+  "schemaLocation": {
+    "http:///org/eclipse/emf/examples/library/extlibrary.ecore/1.0.0": "extlibrary.ecore"
+  },
+  "content": [
+    {
+      "eClass": "extlib:Book",
+      "data": {
+        "title": "book one",
+        "libraries": [
+          "TestLibraryWithExternalBookReferencingLibraries_Library.xmi#/0",
+          "TestLibraryWithExternalBookReferencingLibraries_Library.xmi#/1",
+          "TestLibraryWithExternalBookReferencingLibraries_Library.xmi#/0/@branches.0"
+        ]
+      }
+    }
+  ]
+}

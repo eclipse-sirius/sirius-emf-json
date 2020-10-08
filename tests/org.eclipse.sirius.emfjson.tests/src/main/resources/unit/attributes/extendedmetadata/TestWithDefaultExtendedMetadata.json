@@ -1,0 +1,20 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "example": "http://www.obeo.fr/emfjson/example"
+  },
+  "schemaLocation": {
+    "http://www.obeo.fr/emfjson/example": "ResourceForExtendedMetadataTests.ecore"
+  },
+  "content": [
+    {
+      "eClass": "example:myClass",
+      "data": {
+        "example:anAttribute": "myAttribute"
+      }
+    }
+  ]
+}

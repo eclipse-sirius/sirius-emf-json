@@ -1,0 +1,25 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Java SDK
+        uses: actions/setup-java@v1.3.0
+        with:
+          java-version: 11
+
+      - name: Maven
+        run: mvn clean verify -f releng/org.eclipse.sirius.emfjson.releng/pom.xml
+
+      - name: Deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mvn deploy -f releng/org.eclipse.sirius.emfjson.releng/pom.xml

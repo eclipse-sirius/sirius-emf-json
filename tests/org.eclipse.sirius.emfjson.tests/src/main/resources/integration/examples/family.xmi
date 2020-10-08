@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<basicfamily:Family xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:basicfamily="http://www.example.org/basicfamily" name="myFamily">
+  <members xsi:type="basicfamily:Man" name="daddy" children="//@members.2 //@members.3"/>
+  <members xsi:type="basicfamily:Woman" name="mommy" children="//@members.2 //@members.3"/>
+  <members xsi:type="basicfamily:Man" name="son" parents="//@members.0 //@members.1"/>
+  <members xsi:type="basicfamily:Woman" name="daughter" parents="//@members.0 //@members.1"/>
+</basicfamily:Family>

@@ -1,0 +1,31 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "ecore": "http://www.eclipse.org/emf/2002/Ecore"
+  },
+  "content": [
+    {
+      "eClass": "ecore:EPackage",
+      "data": {
+        "name": "test",
+        "nsURI": "http://www.obeo.fr/test",
+        "nsPrefix": "test",
+        "eClassifiers": [
+          {
+            "eClass": "ecore:EClass",
+            "data": {
+              "name": "TestClass",
+              "eSuperTypes": [
+                "../../../nodes.ecore#//Node",
+                "../../../nodes.ecore#//NodeMultipleCustomDataType"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

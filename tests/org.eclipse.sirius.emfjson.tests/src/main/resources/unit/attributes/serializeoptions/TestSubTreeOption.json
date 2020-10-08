@@ -1,0 +1,26 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "ecore": "http://www.eclipse.org/emf/2002/Ecore"
+  },
+  "content": [
+    {
+      "eClass": "ecore:EClass",
+      "data": {
+        "name": "OtherEClass",
+        "eStructuralFeatures": [
+          {
+            "eClass": "ecore:EReference",
+            "data": {
+              "name": "otherReference",
+              "eType": "TestSubTreeOption.ecore#//myPackage/ThirdEClass"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="ASCII"?>
+<emfjson:myOtherClass xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:emfjson="http://www.obeo.fr/emfjson/2014/EMFJson" xsi:schemaLocation="http://www.obeo.fr/emfjson/2014/EMFJson MultiValuedCrossedEReferencesModel.ecore">
+  <myOtherReference href="../../nodes.ecore#//NodeMultiValuedAttribute/multiStringAttribute"/>
+  <myOtherReference href="MultiValuedCrossedEReferencesModel.ecore#//myClass/myReference"/>
+</emfjson:myOtherClass>

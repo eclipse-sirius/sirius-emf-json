@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="ASCII"?>
+<nodes:NodeMultiValuedAttribute
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:nodes="http://www.obeo.fr/EMFJson"
+    xsi:schemaLocation="http://www.obeo.fr/EMFJson ../../nodes.ecore">
+  <multiDateAttribute>2014-02-06T10:04:04.000+0100</multiDateAttribute>
+  <multiDateAttribute>2039-05-28T11:52:45.000+0200</multiDateAttribute>
+</nodes:NodeMultiValuedAttribute>

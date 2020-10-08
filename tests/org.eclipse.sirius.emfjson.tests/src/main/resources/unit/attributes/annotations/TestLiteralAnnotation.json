@@ -1,0 +1,37 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "ecore": "http://www.eclipse.org/emf/2002/Ecore"
+  },
+  "content": [
+    {
+      "eClass": "ecore:EPackage",
+      "data": {
+        "name": "ecore",
+        "nsURI": "http://www.eclipse.org/emf/2002/Ecore",
+        "nsPrefix": "ecore",
+        "eClassifiers": [
+          {
+            "eClass": "ecore:EEnum",
+            "data": {
+              "name": "AnEnumeration",
+              "eLiterals": [
+                {
+                  "eAnnotations": [
+                    {
+                      "source": "http://www.eclipse.org/emf/2002/Ecore"
+                    }
+                  ],
+                  "name": "ALITERAL"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

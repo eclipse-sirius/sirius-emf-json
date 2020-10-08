@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="ASCII"?>
+<emfjson:myClass
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:emfjson="http://www.obeo.fr/emfjson/2014/EMFJson"
+    xsi:schemaLocation="http://www.obeo.fr/emfjson/2014/EMFJson MultiValuedCrossedEReferencesModel.ecore">
+  <myReference
+      href="myOtherClass.xmi#/"/>
+</emfjson:myClass>

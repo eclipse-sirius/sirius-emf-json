@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="ASCII"?>
+<nodes:NodeMultipleContainment
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:nodes="http://www.obeo.fr/EMFJson"
+    xsi:schemaLocation="http://www.obeo.fr/EMFJson ../../../nodes.ecore"
+    name="multipleContainment">
+  <containmentRef2
+      name="firstNode"/>
+  <containmentRef2
+      name="secondNode"/>
+</nodes:NodeMultipleContainment>

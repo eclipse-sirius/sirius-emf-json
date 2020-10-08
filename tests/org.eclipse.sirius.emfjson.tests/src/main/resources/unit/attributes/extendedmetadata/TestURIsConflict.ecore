@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="parentPackage" nsURI="http://parent.com" nsPrefix="parent">
+  <eSubpackages name="firstConflict" nsURI="http://conflict.com" nsPrefix="conflict">
+    <eClassifiers xsi:type="ecore:EClass" name="MyFirstClass">
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="myAttribute" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EByte"/>
+    </eClassifiers>
+  </eSubpackages>
+  <eSubpackages name="secondConflict" nsURI="http://conflict.fr" nsPrefix="conflict">
+    <eClassifiers xsi:type="ecore:EClass" name="MySecondClass">
+      <eStructuralFeatures xsi:type="ecore:EReference" name="myReference" eType="ecore:EClass http://www.eclipse.org/emf/2002/Ecore#//EObject"/>
+    </eClassifiers>
+  </eSubpackages>
+</ecore:EPackage>

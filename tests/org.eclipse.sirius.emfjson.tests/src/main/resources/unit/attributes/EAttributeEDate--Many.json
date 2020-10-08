@@ -1,0 +1,23 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "nodes": "http://www.obeo.fr/EMFJson"
+  },
+  "schemaLocation": {
+    "http://www.obeo.fr/EMFJson": "../../nodes.ecore"
+  },
+  "content": [
+    {
+      "eClass": "nodes:NodeMultiValuedAttribute",
+      "data": {
+        "multiDateAttribute": [
+          "2014-02-06T10:04:04.000+0100",
+          "2039-05-28T11:52:45.000+0200"
+        ]
+      }
+    }
+  ]
+}

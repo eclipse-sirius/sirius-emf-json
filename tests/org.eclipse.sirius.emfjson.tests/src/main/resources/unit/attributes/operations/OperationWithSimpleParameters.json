@@ -1,0 +1,42 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "ecore": "http://www.eclipse.org/emf/2002/Ecore"
+  },
+  "content": [
+    {
+      "eClass": "ecore:EPackage",
+      "data": {
+        "name": "ecore",
+        "nsURI": "http://www.eclipse.org/emf/2002/Ecore",
+        "nsPrefix": "ecore",
+        "eClassifiers": [
+          {
+            "eClass": "ecore:EClass",
+            "data": {
+              "name": "aClass",
+              "eOperations": [
+                {
+                  "name": "anOperation",
+                  "eParameters": [
+                    {
+                      "name": "aParameter",
+                      "eType": "http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"
+                    },
+                    {
+                      "name": "otherParameter",
+                      "eType": "http://www.eclipse.org/emf/2002/Ecore#//EChar"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

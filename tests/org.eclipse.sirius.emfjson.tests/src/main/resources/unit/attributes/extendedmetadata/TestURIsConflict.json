@@ -1,0 +1,72 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "conflict": "http://conflict.com/obeo_1",
+    "conflict_1": "http://conflict.com/obeo_2",
+    "conflict_2": "http://conflict.com/obeo_3",
+    "ecore": "http://www.eclipse.org/emf/2002/Ecore"
+  },
+  "content": [
+    {
+      "eClass": "ecore:EPackage",
+      "data": {
+        "name": "parentPackage",
+        "conflict:nsURI": "http://parent.com",
+        "nsPrefix": "parent",
+        "eSubpackages": [
+          {
+            "data": {
+              "name": "firstConflict",
+              "conflict_1:nsURI": "http://conflict.com",
+              "nsPrefix": "conflict",
+              "eClassifiers": [
+                {
+                  "eClass": "ecore:EClass",
+                  "data": {
+                    "name": "MyFirstClass",
+                    "eStructuralFeatures": [
+                      {
+                        "eClass": "ecore:EAttribute",
+                        "data": {
+                          "name": "myAttribute",
+                          "eType": "http://www.eclipse.org/emf/2002/Ecore#//EByte"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "data": {
+              "name": "secondConflict",
+              "conflict_2:nsURI": "http://conflict.fr",
+              "nsPrefix": "conflict",
+              "eClassifiers": [
+                {
+                  "eClass": "ecore:EClass",
+                  "data": {
+                    "name": "MySecondClass",
+                    "eStructuralFeatures": [
+                      {
+                        "eClass": "ecore:EReference",
+                        "data": {
+                          "name": "myReference",
+                          "eType": "http://www.eclipse.org/emf/2002/Ecore#//EObject"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

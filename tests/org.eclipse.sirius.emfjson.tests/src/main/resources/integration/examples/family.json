@@ -1,0 +1,61 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "basicfamily": "http://www.example.org/basicfamily"
+  },
+  "schemaLocation": {
+    "http://www.example.org/basicfamily": "basicfamily.ecore"
+  },
+  "content": [
+    {
+      "eClass": "basicfamily:Family",
+      "data": {
+        "members": [
+          {
+            "eClass": "basicfamily:Man",
+            "data": {
+              "name": "daddy",
+              "children": [
+                "//@members.2",
+                "//@members.3"
+              ]
+            }
+          },
+          {
+            "eClass": "basicfamily:Woman",
+            "data": {
+              "name": "mommy",
+              "children": [
+                "//@members.2",
+                "//@members.3"
+              ]
+            }
+          },
+          {
+            "eClass": "basicfamily:Man",
+            "data": {
+              "name": "son",
+              "parents": [
+                "//@members.0",
+                "//@members.1"
+              ]
+            }
+          },
+          {
+            "eClass": "basicfamily:Woman",
+            "data": {
+              "name": "daughter",
+              "parents": [
+                "//@members.0",
+                "//@members.1"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

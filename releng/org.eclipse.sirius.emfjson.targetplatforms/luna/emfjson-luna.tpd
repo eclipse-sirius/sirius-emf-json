@@ -1,0 +1,22 @@
+target "emfjson"
+
+location "http://download.eclipse.org/releases/luna" {
+	org.eclipse.emf.common lazy
+	org.eclipse.emf.ecore lazy
+	org.eclipse.emf.ecore.xmi lazy
+	org.eclipse.core.contenttype lazy
+	org.eclipse.core.jobs lazy
+	org.eclipse.core.runtime lazy
+	org.eclipse.equinox.app lazy
+	org.eclipse.equinox.common lazy
+	org.eclipse.equinox.preferences lazy
+	org.eclipse.equinox.registry lazy
+	org.junit lazy
+	org.eclipse.osgi lazy
+}
+
+location "http://download.eclipse.org/tools/orbit/downloads/drops/R20140525021250/repository/" {
+	com.google.guava lazy
+	com.google.gson lazy
+	javax.xml lazy
+}

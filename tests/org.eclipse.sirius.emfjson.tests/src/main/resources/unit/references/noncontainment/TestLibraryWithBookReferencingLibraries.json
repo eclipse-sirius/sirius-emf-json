@@ -1,0 +1,48 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "extlib": "http:///org/eclipse/emf/examples/library/extlibrary.ecore/1.0.0"
+  },
+  "schemaLocation": {
+    "http:///org/eclipse/emf/examples/library/extlibrary.ecore/1.0.0": "extlibrary.ecore"
+  },
+  "content": [
+    {
+      "eClass": "extlib:Library",
+      "data": {
+        "name": "library one",
+        "branches": [
+          {
+            "eClass": "extlib:Library",
+            "data": {
+              "name": "library three",
+              "stock": [
+                {
+                  "eClass": "extlib:Book",
+                  "data": {
+                    "title": "book one",
+                    "library": "/0/@branches.0",
+                    "libraries": [
+                      "/0",
+                      "/1",
+                      "/0/@branches.0"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "eClass": "extlib:Library",
+      "data": {
+        "name": "library two"
+      }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "ecore": "http://www.eclipse.org/emf/2002/Ecore"
+  },
+  "content": [
+    {
+      "eClass": "ecore:EPackage",
+      "data": {
+        "name": "ecore",
+        "nsURI": "http://www.eclipse.org/emf/2002/Ecore",
+        "nsPrefix": "ecore",
+        "eClassifiers": [
+          {
+            "eClass": "ecore:EClass",
+            "data": {
+              "name": "EClass",
+              "eOperations": [
+                {
+                  "name": "anOperation",
+                  "eParameters": [
+                    {
+                      "name": "eParameter",
+                      "eType": "http://www.eclipse.org/emf/2002/Ecore#//EDouble",
+                      "eAnnotations": [
+                        {
+                          "source": "http://www.eclipse.org/emf/2002/Ecore",
+                          "references": [
+                            "http://www.eclipse.org/emf/2002/Ecore#//EDouble/%http:%2F%2F%2Forg%2Feclipse%2Femf%2Fecore%2Futil%2FExtendedMetaData%"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

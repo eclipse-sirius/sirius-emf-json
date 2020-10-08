@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         id="org.eclipse.sirius.emfjson.JsoncontentTypeDescriptor"
+         name="JsonDescriptor"
+         point="org.eclipse.core.contenttype.contentTypes">
+      <content-type
+            describer="org.eclipse.sirius.emfjson.ide.internal.describer.JsonDescriber"
+            file-extensions="json"
+            id="org.eclipse.sirius.emfjson.internal.contenttype.json"
+            name="Json File"
+            priority="high">
+      </content-type>
+   </extension>
+   <extension
+         point="org.eclipse.emf.ecore.content_parser">
+      <parser
+            class="org.eclipse.sirius.emfjson.resource.JsonResourceFactoryImpl"
+            contentTypeIdentifier="org.eclipse.sirius.emfjson.internal.contenttype.json">
+      </parser>
+   </extension>
+
+</plugin>

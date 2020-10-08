@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="org.eclipse.sirius.emfjson.feature"
+      label="%Feature-name"
+      version="2.3.0.qualifier"
+      provider-name="%Feature-vendor">
+
+   <description url="">
+      %Description
+   </description>
+
+   <copyright url="">
+      %Copyright
+   </copyright>
+
+   <license url="">
+      %Licence
+   </license>
+
+   <plugin
+         id="org.eclipse.sirius.emfjson"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>

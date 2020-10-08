@@ -1,0 +1,20 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "nodes": "http://www.obeo.fr/EMFJson"
+  },
+  "schemaLocation": {
+    "http://www.obeo.fr/EMFJson": "../../nodes.ecore"
+  },
+  "content": [
+    {
+      "eClass": "nodes:NodeSingleValueAttribute",
+      "data": {
+        "singleDoubleObjectAttribute": 3.6
+      }
+    }
+  ]
+}

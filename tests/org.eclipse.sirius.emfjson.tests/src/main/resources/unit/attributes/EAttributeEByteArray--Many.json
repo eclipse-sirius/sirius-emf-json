@@ -1,0 +1,23 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "nodes": "http://www.obeo.fr/EMFJson"
+  },
+  "schemaLocation": {
+    "http://www.obeo.fr/EMFJson": "../../nodes.ecore"
+  },
+  "content": [
+    {
+      "eClass": "nodes:NodeMultiValuedAttribute",
+      "data": {
+        "multiByteArrayAttribute": [
+          "4C6F72656D20697073756D20646F6C6F722073697420616D65742C20636F6E7365637465747572206164697069736963696E6720656C6974",
+          "4C6F72656D20697073756D20646F6C6F722073697420616D65742C20636F6E736563746574757220616469706944FF3696E6720656C69704"
+        ]
+      }
+    }
+  ]
+}

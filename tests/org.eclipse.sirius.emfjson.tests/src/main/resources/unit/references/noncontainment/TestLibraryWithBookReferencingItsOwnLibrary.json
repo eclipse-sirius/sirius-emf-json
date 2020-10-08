@@ -1,0 +1,29 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "extlib": "http:///org/eclipse/emf/examples/library/extlibrary.ecore/1.0.0"
+  },
+  "schemaLocation": {
+    "http:///org/eclipse/emf/examples/library/extlibrary.ecore/1.0.0": "extlibrary.ecore"
+  },
+  "content": [
+    {
+      "eClass": "extlib:Library",
+      "data": {
+        "name": "library one",
+        "stock": [
+          {
+            "eClass": "extlib:Book",
+            "data": {
+              "title": "book two",
+              "library": "/"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

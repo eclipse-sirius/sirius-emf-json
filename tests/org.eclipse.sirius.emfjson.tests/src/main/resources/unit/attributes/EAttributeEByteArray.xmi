@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="ASCII"?>
+<nodes:NodeSingleValueAttribute
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:nodes="http://www.obeo.fr/EMFJson"
+    xsi:schemaLocation="http://www.obeo.fr/EMFJson ../../nodes.ecore"
+    singleByteArrayAttribute="4C6F72656D20697073756D20646F6C6F722073697420616D65742C20636F6E7365637465747572206164697069736963696E6720656C6974"/>

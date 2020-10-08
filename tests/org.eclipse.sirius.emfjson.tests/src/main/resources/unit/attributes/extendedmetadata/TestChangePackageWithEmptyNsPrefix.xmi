@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="ASCII"?>
+<truc:myClass
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:truc="http://www.obeo.fr/emfjson/truc"
+    xsi:schemaLocation="http://www.obeo.fr/emfjson/truc ResourceForExtendedMetadataTests.ecore"
+    anAttribute="myAttribute"/>

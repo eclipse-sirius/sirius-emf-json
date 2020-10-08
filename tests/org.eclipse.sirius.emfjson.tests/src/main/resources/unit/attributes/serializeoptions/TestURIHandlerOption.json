@@ -1,0 +1,76 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "ecore": "http://www.eclipse.org/emf/2002/Ecore"
+  },
+  "content": [
+    {
+      "eClass": "ecore:EPackage",
+      "data": {
+        "eAnnotations": [
+          {
+            "source": "boolean"
+          }
+        ],
+        "name": "ecore",
+        "nsURI": "http://www.eclipse.org/emf/2002/Ecore",
+        "nsPrefix": "ecore",
+        "eClassifiers": [
+          {
+            "eClass": "ecore:EClass",
+            "data": {
+              "name": "EClass",
+              "eTypeParameters": [
+                {
+                  "name": "aTypeParameter",
+                  "eBounds": [
+                    {
+                      "eClassifier": "../../../../emf/2002/Ecore#//EByteObject"
+                    }
+                  ]
+                }
+              ],
+              "eSuperTypes": [
+                "../../../../emf/2002/Ecore#//EClass"
+              ],
+              "eOperations": [
+                {
+                  "name": "anOperation",
+                  "eType": "../../../../emf/2002/Ecore#//ECharacterObject",
+                  "eGenericExceptions": [
+                    {
+                      "eClassifier": "../../../../emf/2002/Ecore#//EInvocationTargetException"
+                    },
+                    {
+                      "eClassifier": "../../../../emf/2002/Ecore#//EJavaClass",
+                      "eTypeArguments": [
+                        {
+                          "eClassifier": "../../../../emf/2002/Ecore#//EEList",
+                          "eTypeArguments": [
+                            {}
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "otherOperation",
+                  "eGenericType": {
+                    "eTypeParameter": "//EClass/aTypeParameter"
+                  },
+                  "eExceptions": [
+                    "../../../../emf/2002/Ecore#//EDoubleObject"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
