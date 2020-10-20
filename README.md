@@ -16,6 +16,12 @@ from the top-level directory.
 
 Note that you will need to use Java 11 to run the build. Java 12 and later are currently not supported.
 
+If you are behind a proxy, you may get Maven errors about checkstyle.org not being available. In this case you need to explicitly disable CheckStyle from the build:
+
+```
+mvn clean package -f releng/org.eclipse.sirius.emfjson.releng/pom.xml -P\!checkstyle
+```
+
 The resulting update-site (p2 repository) can be found in `packaging/org.eclipse.sirius.update/target/repository`.
 
 ### License
