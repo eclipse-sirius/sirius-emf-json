@@ -6,13 +6,17 @@ Although it is part of Sirius, this new EMF resource type can actually be used b
 
 ### Building
 
-The build uses [Tycho](http://www.eclipse.org/tycho/). To launch a complete build, issue:
+The build uses Maven and [Tycho](http://www.eclipse.org/tycho/). To launch a complete build, issue:
 
 ```
 mvn clean package -f releng/org.eclipse.sirius.emfjson.releng/pom.xml
 ```
 
-from the top-level directory. The resulting update-site (p2 repository) can be found in `packaging/org.eclipse.sirius.update/target/repository`.
+from the top-level directory.
+
+Note that you will need to use Java 11 to run the build. Java 12 and later are currently not supported.
+
+The resulting update-site (p2 repository) can be found in `packaging/org.eclipse.sirius.update/target/repository`.
 
 ### License
 
