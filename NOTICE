@@ -28,11 +28,13 @@ The project maintains the following source code repositories:
 
 * https://git.eclipse.org/c/sirius/org.eclipse.sirius.git
 * https://git.eclipse.org/c/sirius/org.eclipse.sirius.legacy.git
-* https://github.com/eclipse/sirius-emf-json
-* https://github.com/eclipse/sirius-components
-* https://github.com/eclipse/sirius-web
+* https://github.com/eclipse-sirius/sirius-emf-json
+* https://github.com/eclipse-sirius/sirius-components
+* https://github.com/eclipse-sirius/sirius-web
 
 ## Third-party Content (Dependencies)
+
+This particular component of the Sirius project depends on these external projects:
 
 * Google Gson 2.8.2 (Apache License 2.0), obtained from Orbit.
 * Google Guava 27.1 (Apache License 2.0), obtained from Orbit.
