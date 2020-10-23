@@ -7,18 +7,23 @@ Although it is part of Sirius, this new EMF resource type can actually be used b
 
 == Building
 
-The build uses Maven and http://www.eclipse.org/tycho/[Tycho]. To launch a complete build, issue:
+The build uses https://maven.apache.org/[Apache Maven] (version 3.6.3) and http://www.eclipse.org/tycho/[Tycho]. To launch a complete build, issue:
 
-    mvn clean package -f releng/org.eclipse.sirius.emfjson.releng/pom.xml
+[source,sh]
+----
+mvn clean package -f releng/org.eclipse.sirius.emfjson.releng/pom.xml
+----
 
 from the top-level directory.
 
-
 WARNING: Note that you will need to use **Java 11** to run the build. Java 12 and later are currently not supported.
 
-If you are behind a proxy, you may get Maven errors about checkstyle.org not being available. In this case you need to explicitly disable CheckStyle from the build:
+If you are behind a proxy, you may get Maven errors about `checkstyle.org` not being available. In this case you need to explicitly disable CheckStyle from the build:
 
-    mvn clean package -f releng/org.eclipse.sirius.emfjson.releng/pom.xml -P\!checkstyle
+[source,sh]
+----
+mvn clean package -f releng/org.eclipse.sirius.emfjson.releng/pom.xml -P\!checkstyle
+----
 
 The resulting update-site (p2 repository) can be found in `packaging/org.eclipse.sirius.update/target/repository`.
 
@@ -27,9 +32,12 @@ The resulting update-site (p2 repository) can be found in `packaging/org.eclipse
 To use EMF JSON resources, simply register the `org.eclipse.sirius.emfjson.resource.JsonResourceFactoryImpl` resource factory in your resource set or in the global resource factory registry.
 For example:
 
-    Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("json", new JsonResourceFactoryImpl());
+[source,java]
+----
+Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("json", new JsonResourceFactoryImpl());
+----
 
-If you are running in the context of the Eclipse Platform, the `org.eclipse.sirius.emfjson.ide` plug-in does this automatically and also registers the corresponding Content-Type.
+If you are running in the context of the Eclipse Platform, the `org.eclipse.sirius.emfjson.ide` plug-in does this automatically and also registers the corresponding `Content-Type`.
 
 See the `org.eclipse.sirius.emfjson.resource.JsonResource` for various options that can be used to control the serialisation/deserialisation process (e.g. whether to pretty-print the JSON).
 
