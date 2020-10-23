@@ -25,7 +25,7 @@ If you are behind a proxy, you may get Maven errors about `checkstyle.org` not b
 mvn clean package -f releng/org.eclipse.sirius.emfjson.releng/pom.xml -P\!checkstyle
 ----
 
-The resulting update-site (p2 repository) can be found in `packaging/org.eclipse.sirius.update/target/repository`.
+The resulting update-site (p2 repository) can be found in `repositories/org.eclipse.sirius.emfjson.repository/target/repository`.
 
 == Usage
 
