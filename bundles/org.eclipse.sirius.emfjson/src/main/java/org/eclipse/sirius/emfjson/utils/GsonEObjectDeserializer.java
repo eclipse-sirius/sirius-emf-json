@@ -837,11 +837,26 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     private void deserializeEAttribute(EAttribute eAttribute, JsonElement jsonElement, EObject eObject) {
         EDataType dataType = eAttribute.getEAttributeType();
         if (!eAttribute.isMany()) {
-            String newValue = jsonElement.getAsString();
+            String newValue = null;
+            if (jsonElement.isJsonArray()) {
+                JsonArray asJsonArray = jsonElement.getAsJsonArray();
+                if (asJsonArray.size() > 0) {
+                    newValue = asJsonArray.get(0).getAsString();
+                }
+            }
+            if (newValue == null) {
+                newValue = jsonElement.getAsString();
+            }
             Object value = EcoreUtil.createFromString(dataType, newValue);
             this.helper.setValue(eObject, eAttribute, value);
         } else {
-            JsonArray asJsonArray = jsonElement.getAsJsonArray();
+            JsonArray asJsonArray;
+            if (jsonElement.isJsonPrimitive()) {
+                asJsonArray = new JsonArray();
+                asJsonArray.add(jsonElement.getAsString());
+            } else {
+                asJsonArray = jsonElement.getAsJsonArray();
+            }
             Object eGet = this.helper.getValue(eObject, eAttribute);
             if (eGet instanceof Collection<?>) {
                 for (JsonElement jElement : asJsonArray) {
