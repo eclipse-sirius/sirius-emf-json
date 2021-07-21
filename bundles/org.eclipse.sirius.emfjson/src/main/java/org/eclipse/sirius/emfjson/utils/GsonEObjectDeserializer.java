@@ -469,7 +469,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
      */
     private void deserializeSingleNonContainmentEReference(EReference eReference, JsonElement value, EObject eObject) {
 
-        String id = value.getAsString();
+        String id = this.getAsFlexibleString(value);
 
         if (id.startsWith("&") && this.resourceEntityHandler != null) { //$NON-NLS-1$
             id = this.handleResourceEntity(id).toString();
@@ -561,7 +561,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
      *            the EObject
      */
     private void deserializeMultipleNonContainmentEReference(EReference eReference, JsonElement value, EObject eObject) {
-        JsonArray array = value.getAsJsonArray();
+        JsonArray array = this.getAsFlexibleArray(value);
         for (int i = 0; i < array.size(); ++i) {
 
             String id = array.get(i).getAsString();
@@ -728,7 +728,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     private void deserializeMultipleContainmentEReference(EReference eReference, JsonElement value, EObject eObject) {
         EObject eReferenceValue = null;
         String referenceName = eReference.getName();
-        JsonArray jsonArray = value.getAsJsonArray();
+        JsonArray jsonArray = this.getAsFlexibleArray(value);
 
         for (JsonElement jsonElement : jsonArray) {
             JsonObject jsonObject = jsonElement.getAsJsonObject();
@@ -799,7 +799,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
      *            the EObject
      */
     private void deserialziseSingleContainmentEReference(EReference eReference, JsonElement value, EObject eObject) {
-        JsonObject jsonObject = value.getAsJsonObject();
+        JsonObject jsonObject = this.getAsFlexibleObject(value);
         EObject eReferenceValue = null;
         String referenceName = eReference.getName();
         if (referenceName.equals(IGsonConstants.EGENERICTYPE)) {
@@ -837,26 +837,11 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     private void deserializeEAttribute(EAttribute eAttribute, JsonElement jsonElement, EObject eObject) {
         EDataType dataType = eAttribute.getEAttributeType();
         if (!eAttribute.isMany()) {
-            String newValue = null;
-            if (jsonElement.isJsonArray()) {
-                JsonArray asJsonArray = jsonElement.getAsJsonArray();
-                if (asJsonArray.size() > 0) {
-                    newValue = asJsonArray.get(0).getAsString();
-                }
-            }
-            if (newValue == null) {
-                newValue = jsonElement.getAsString();
-            }
+            String newValue = this.getAsFlexibleString(jsonElement);
             Object value = EcoreUtil.createFromString(dataType, newValue);
             this.helper.setValue(eObject, eAttribute, value);
         } else {
-            JsonArray asJsonArray;
-            if (jsonElement.isJsonPrimitive()) {
-                asJsonArray = new JsonArray();
-                asJsonArray.add(jsonElement.getAsString());
-            } else {
-                asJsonArray = jsonElement.getAsJsonArray();
-            }
+            JsonArray asJsonArray = this.getAsFlexibleArray(jsonElement);
             Object eGet = this.helper.getValue(eObject, eAttribute);
             if (eGet instanceof Collection<?>) {
                 for (JsonElement jElement : asJsonArray) {
@@ -867,6 +852,68 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                 }
             }
         }
+    }
+
+    /**
+     * Read a JSON element as a string. If the element is a non-empty array, unwrap it and consider the first element
+     * inside instead of trying to convert the array into a string.
+     *
+     * @param jsonElement
+     *            a JSON element.
+     * @return the value/content of the element as a string.
+     */
+    private String getAsFlexibleString(JsonElement jsonElement) {
+        String newValue = null;
+        if (jsonElement.isJsonArray()) {
+            JsonArray asJsonArray = jsonElement.getAsJsonArray();
+            if (asJsonArray.size() > 0) {
+                newValue = asJsonArray.get(0).getAsString();
+            }
+        }
+        if (newValue == null) {
+            newValue = jsonElement.getAsString();
+        }
+        return newValue;
+    }
+
+    /**
+     * Read a JSON element as an object. If the element is a non-empty array, unwrap it and consider the first element
+     * inside instead of trying to convert the array into an object.
+     *
+     * @param jsonElement
+     *            a JSON element.
+     * @return the value/content of the element as an object.
+     */
+    private JsonObject getAsFlexibleObject(JsonElement jsonElement) {
+        JsonObject newValue = null;
+        if (jsonElement.isJsonArray()) {
+            JsonArray asJsonArray = jsonElement.getAsJsonArray();
+            if (asJsonArray.size() > 0) {
+                newValue = asJsonArray.get(0).getAsJsonObject();
+            }
+        }
+        if (newValue == null) {
+            newValue = jsonElement.getAsJsonObject();
+        }
+        return newValue;
+    }
+
+    /**
+     * Read a JSON element as an array. If the element is a primitive or an object, wrap it into an array.
+     *
+     * @param jsonElement
+     *            a JSON element.
+     * @return the value/content of the element as an array.
+     */
+    private JsonArray getAsFlexibleArray(JsonElement jsonElement) {
+        JsonArray asJsonArray;
+        if (jsonElement.isJsonPrimitive() || jsonElement.isJsonObject()) {
+            asJsonArray = new JsonArray();
+            asJsonArray.add(jsonElement);
+        } else {
+            asJsonArray = jsonElement.getAsJsonArray();
+        }
+        return asJsonArray;
     }
 
     /**
