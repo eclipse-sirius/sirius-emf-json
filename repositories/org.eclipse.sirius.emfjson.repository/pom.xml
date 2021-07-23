@@ -19,7 +19,7 @@
 	<parent>
 		<groupId>org.eclipse.sirius.emfjson</groupId>
 		<artifactId>org.eclipse.sirius.emfjson.releng</artifactId>
-		<version>2.3.0-SNAPSHOT</version>
+		<version>2.3.1-SNAPSHOT</version>
 		<relativePath>../../releng/org.eclipse.sirius.emfjson.releng</relativePath>
 	</parent>
 
@@ -27,7 +27,7 @@
 	<artifactId>org.eclipse.sirius.emfjson.repository</artifactId>
 	<packaging>eclipse-repository</packaging>
 	
-	<name>EMFJson Repository</name>
+	<name>Sirius EMF JSON Repository</name>
 	
 	<build>
      <plugins>
