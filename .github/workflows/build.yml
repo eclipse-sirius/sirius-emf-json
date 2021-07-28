@@ -2,7 +2,11 @@ name: Build
 on:
   push:
     branches:
-      - master
+      - '**'
+    tags:
+      - '*'
+  pull_request:
+  workflow_dispatch:
 jobs:
   build:
     name: Build
@@ -20,6 +24,7 @@ jobs:
         run: mvn clean verify -f releng/org.eclipse.sirius.emfjson.releng/pom.xml
 
       - name: Deploy
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mvn deploy -f releng/org.eclipse.sirius.emfjson.releng/pom.xml
