@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Obeo.
+ * Copyright (c) 2020, 2022 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -379,7 +379,7 @@ public interface JsonResource extends Resource {
     /**
      * The interface that can handle meta-data.
      */
-    public interface IEObjectHandler {
+    interface IEObjectHandler {
         /**
          * This operation will be used to manipulate the content saved in the JsonElement after the serialization of the
          * EObject. It can be used to add, remove, modify the JsonElement created for the given EObject.

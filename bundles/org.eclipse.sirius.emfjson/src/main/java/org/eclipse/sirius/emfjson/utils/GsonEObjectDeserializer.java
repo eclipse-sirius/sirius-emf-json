@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Obeo.
+ * Copyright (c) 2020, 2022 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.TreeIterator;
@@ -43,7 +44,6 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EPackage.Registry;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
-import org.eclipse.emf.ecore.EcoreFactory;
 import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -470,6 +470,13 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     private void deserializeSingleNonContainmentEReference(EReference eReference, JsonElement value, EObject eObject) {
 
         String id = this.getAsFlexibleString(value);
+        String qualifiedType = null;
+
+        String[] split = id.split(" "); //$NON-NLS-1$
+        if (split.length == 2) {
+            qualifiedType = split[0];
+            id = split[1];
+        }
 
         if (id.startsWith("&") && this.resourceEntityHandler != null) { //$NON-NLS-1$
             id = this.handleResourceEntity(id).toString();
@@ -499,18 +506,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                     packageResource = ePackage.eResource();
                     object = packageResource.getEObject(fragmentEMF);
                 } else {
-                    InternalEObject internalEObject = (InternalEObject) EcoreFactory.eINSTANCE.createEClass(); // Can I
-                                                                                                               // have
-                                                                                                               // other
-                                                                                                               // type
-                                                                                                               // of
-                                                                                                               // EObject
-                                                                                                               // here?
-                    URI toResolveURI = URI.createURI(id);
-
-                    toResolveURI = toResolveURI.resolve(this.resourceURI);
-                    internalEObject.eSetProxyURI(toResolveURI);
-                    object = EcoreUtil.resolve(internalEObject, eObject);
+                    object = this.createProxyEObject(id, qualifiedType, eReference);
                 }
                 this.helper.setValue(eObject, eReference, object);
             }
@@ -524,6 +520,61 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                 this.forwardSingleReferences.add(singleReference);
             }
         }
+    }
+
+    /**
+     * Create a proxy.
+     *
+     * @param id
+     *            the id of the referenced object
+     * @param qualifiedType
+     *            the qualified concrete type of the referenced object (package nsuri + concrete type)
+     * @param eReference
+     *            the EReference
+     * @return the proxy
+     */
+    private EObject createProxyEObject(String id, String qualifiedType, EReference eReference) {
+        EObject proxyEObject = null;
+
+        URI toResolveURI = URI.createURI(id);
+        if (qualifiedType != null) {
+            String[] splitType = qualifiedType.split(":"); //$NON-NLS-1$
+            if (splitType.length == 2) {
+                String packageName = splitType[0];
+                String eClassName = splitType[1];
+                // @formatter:off
+                Optional<EPackage> packageOpt = this.resourceSet.getPackageRegistry().values().stream()
+                        .filter(EPackage.class::isInstance)
+                        .map(EPackage.class::cast)
+                        .filter(pkg-> pkg.getName().equals(packageName))
+                        .findFirst();
+                if (packageOpt.isPresent()) {
+                    Optional<EObject> eObject = packageOpt.get().getEClassifiers().stream()
+                        .filter(clazz-> eClassName.equals(clazz.getName()))
+                        .filter(EClass.class::isInstance)
+                        .map(EClass.class::cast)
+                        .map(eClass -> eClass.getEPackage().getEFactoryInstance().create(eClass))
+                        .findFirst();
+                    if (eObject.isPresent()) {
+                        proxyEObject = eObject.get();
+                        URI resolvedURI = toResolveURI;
+                            resolvedURI = toResolveURI.resolve(this.resourceURI);
+                        ((InternalEObject) proxyEObject).eSetProxyURI(resolvedURI);
+                    }
+                // @formatter:on
+                }
+            }
+        } else {
+            EClass eType = eReference.getEReferenceType();
+            if (!eType.isAbstract()) {
+                proxyEObject = eType.getEPackage().getEFactoryInstance().create(eType);
+                if (proxyEObject != null) {
+                    URI resolvedURI = toResolveURI.resolve(this.resourceURI);
+                    ((InternalEObject) proxyEObject).eSetProxyURI(resolvedURI);
+                }
+            }
+        }
+        return proxyEObject;
     }
 
     /**
@@ -565,6 +616,13 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
         for (int i = 0; i < array.size(); ++i) {
 
             String id = array.get(i).getAsString();
+            String qualifiedType = null;
+
+            String[] split = id.split(" "); //$NON-NLS-1$
+            if (split.length == 2) {
+                qualifiedType = split[0];
+                id = split[1];
+            }
 
             if (id.startsWith("&") && this.resourceEntityHandler != null) { //$NON-NLS-1$
                 id = this.handleResourceEntity(id).toString();
@@ -591,20 +649,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                         packageResource = ePackage.eResource();
                         object = packageResource.getEObject(fragmentEMF);
                     } else {
-                        InternalEObject internalEObject = (InternalEObject) EcoreFactory.eINSTANCE.createEClass(); // I
-                                                                                                                   // don't
-                                                                                                                   // think
-                                                                                                                   // we
-                                                                                                                   // can
-                                                                                                                   // have
-                                                                                                                   // an
-                                                                                                                   // other
-                                                                                                                   // Class
-                        URI toResolveURI = URI.createURI(id);
-
-                        toResolveURI = toResolveURI.resolve(this.resourceURI);
-                        internalEObject.eSetProxyURI(toResolveURI);
-                        object = EcoreUtil.resolve(internalEObject, eObject);
+                        object = this.createProxyEObject(id, qualifiedType, eReference);
                     }
                     this.helper.setUniqueValue(eObject, eReference, object);
                 }
