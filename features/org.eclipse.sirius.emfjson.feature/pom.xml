@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 
-  Copyright (c) 2020 Obeo.
+  Copyright (c) 2020, 2022 Obeo.
   This program and the accompanying materials
   are made available under the terms of the Eclipse Public License v2.0
   which accompanies this distribution, and is available at
@@ -20,13 +20,13 @@
 	<parent>
 		<groupId>org.eclipse.sirius.emfjson</groupId>
 		<artifactId>org.eclipse.sirius.emfjson.releng</artifactId>
-		<version>2.3.1-SNAPSHOT</version>
+		<version>2.3.2-SNAPSHOT</version>
 		<relativePath>../../releng/org.eclipse.sirius.emfjson.releng</relativePath>
 	</parent>
 	
 	
 	<artifactId>org.eclipse.sirius.emfjson.feature</artifactId>
-	<version>2.3.1-SNAPSHOT</version>
+	<version>2.3.2-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 	
 	<name>Sirius EMF JSON Feature</name>
