@@ -1010,18 +1010,17 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         JsonElement jsonElement = null;
 
         Object value = this.helper.getValue(eObject, eAttribute);
+        EFactory eFactoryInstance = eAttribute.getEType().getEPackage().getEFactoryInstance();
         if (eAttribute.isMany()) {
             JsonArray jsonArray = new JsonArray();
             if (value instanceof Collection) {
                 Collection<?> collection = (Collection<?>) value;
-                EFactory eFactoryInstance = eObject.eClass().getEPackage().getEFactoryInstance();
                 for (Object object : collection) {
                     jsonArray.add(new JsonPrimitive(eFactoryInstance.convertToString(eAttribute.getEAttributeType(), object)));
                 }
             }
             jsonElement = jsonArray;
         } else {
-            EFactory eFactoryInstance = eAttribute.getEType().getEPackage().getEFactoryInstance();
             String stringValue = eFactoryInstance.convertToString(eAttribute.getEAttributeType(), value);
 
             if (stringValue == null) {
