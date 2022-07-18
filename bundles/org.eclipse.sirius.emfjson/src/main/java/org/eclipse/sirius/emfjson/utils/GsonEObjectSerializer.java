@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Obeo.
+ * Copyright (c) 2020, 2022 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -414,9 +414,13 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
             String typeParameter = this.getReferenceUri(EcoreUtil.getURI(eGenericType.getETypeParameter()));
             jsonObject.add(IGsonConstants.ETYPEPARAMETER, new JsonPrimitive(typeParameter));
         } else if (eGenericType.getEClassifier() instanceof EClass) {
-
+            EClass eClass = (EClass) eGenericType.getEClassifier();
+            EClass metaClass = eClass.eClass();
             String stringClassifier = ""; //$NON-NLS-1$
             stringClassifier += this.helper.deresolve(EcoreUtil.getURI(eGenericType.getEClassifier()));
+            if (this.shouldSaveType(metaClass)) {
+                stringClassifier = this.helper.getQName(metaClass) + " " + stringClassifier; //$NON-NLS-1$
+            }
 
             jsonObject.add(IGsonConstants.ECLASSIFIER, new JsonPrimitive(this.removeFragmentSeparator(stringClassifier)));
             jsonObject.add(IGsonConstants.ETYPEARGUMENTS, this.serializationETypeArguments(eGenericType));

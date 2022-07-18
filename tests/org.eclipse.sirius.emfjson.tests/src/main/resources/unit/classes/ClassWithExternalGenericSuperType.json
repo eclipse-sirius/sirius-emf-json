@@ -20,7 +20,7 @@
               "name": "AClass",
               "eGenericSuperTypes": [
                 {
-                  "eClassifier": "../../nodes.ecore#//OtherClass",
+                  "eClassifier": "ecore:EClass ../../nodes.ecore#//OtherClass",
                   "eTypeArguments": [
                     {
                       "eClassifier": "http://www.eclipse.org/emf/2002/Ecore#//EEList",

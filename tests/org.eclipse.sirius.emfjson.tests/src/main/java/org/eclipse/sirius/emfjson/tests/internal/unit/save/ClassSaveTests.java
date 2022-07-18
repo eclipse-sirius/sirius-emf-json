@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Obeo.
+ * Copyright (c) 2020, 2022 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@
 
 package org.eclipse.sirius.emfjson.tests.internal.unit.save;
 
+import org.eclipse.sirius.emfjson.resource.JsonResource;
 import org.eclipse.sirius.emfjson.tests.internal.AbstractEMFJsonTests;
 import org.junit.Test;
 
@@ -86,6 +87,7 @@ public class ClassSaveTests extends AbstractEMFJsonTests {
      */
     @Test
     public void testSaveClassWithExternalGenericSuperType() {
+        this.options.put(JsonResource.OPTION_DISPLAY_DYNAMIC_INSTANCES, Boolean.TRUE);
         this.testSave("ClassWithExternalGenericSuperType.ecore"); //$NON-NLS-1$
     }
 
