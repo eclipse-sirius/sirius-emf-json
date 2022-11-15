@@ -367,13 +367,15 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
             eObject = this.deserializeEClassifier(eClassifier, object, isTopObject);
         }
 
-        if (this.eObjectHandler != null) {
-            this.eObjectHandler.processDeserializedContent(eObject, object);
-        }
+        if (eObject != null) {
+            if (this.eObjectHandler != null) {
+                this.eObjectHandler.processDeserializedContent(eObject, object);
+            }
 
-        JsonElement idJsonElement = object.get(IGsonConstants.ID);
-        if (idJsonElement != null && this.resource != null) {
-            this.resource.setID(eObject, idJsonElement.getAsString());
+            JsonElement idJsonElement = object.get(IGsonConstants.ID);
+            if (idJsonElement != null && this.resource != null) {
+                this.resource.setID(eObject, idJsonElement.getAsString());
+            }
         }
 
         return eObject;
@@ -810,7 +812,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                 eReferenceValue = this.loadObject(jsonObject, false);
             }
             Object eGet = this.helper.getValue(eObject, eReference);
-            if (eGet instanceof Collection<?>) {
+            if (eGet instanceof Collection<?> && eReferenceValue != null) {
                 @SuppressWarnings("unchecked")
                 Collection<Object> collection = (Collection<Object>) eGet;
                 collection.add(eReferenceValue);
