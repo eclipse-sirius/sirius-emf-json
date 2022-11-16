@@ -667,14 +667,12 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         JsonObject jsonObject = null;
         EPackage noNamespacePackage = this.helper.getNoNamespacePackage();
         EPackage[] packages = this.helper.packages();
-        StringBuffer xsiSchemaLocation = new StringBuffer();
         String xsiNoNamespaceSchemaLocation = null;
         if (this.declareSchemaLocation) {
             Map<String, String> handleBySchemaLocationMap = Collections.emptyMap();
             // NOTE: there is a case on xsd file : look at XMLSaveimpl#
 
             for (EPackage ePackage : packages) {
-
                 if (noNamespacePackage == ePackage) {
                     if (ePackage.eResource() != null && !handleBySchemaLocationMap.containsKey(null)) {
                         xsiNoNamespaceSchemaLocation = this.getNoNamespaceSchemaLocation(ePackage);
@@ -682,7 +680,13 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                 } else {
                     Resource resource = ePackage.eResource();
                     if (resource != null) {
-                        jsonObject = this.getJsonObjectFromResource(ePackage, handleBySchemaLocationMap, resource, xsiSchemaLocation);
+                        JsonObjectProperty jsonObjectProperty = this.getJsonObjectFromResource(ePackage, handleBySchemaLocationMap, resource);
+                        if (jsonObjectProperty != null) {
+                            if (jsonObject == null) {
+                                jsonObject = new JsonObject();
+                            }
+                            jsonObject.add(jsonObjectProperty.getKey(), jsonObjectProperty.getElement());
+                        }
                     }
                 }
             }
@@ -708,12 +712,10 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      *            if
      * @param resource
      *            the resource to get URI
-     * @param xsiSchemaLocation
-     *            the xsiSchemaLocation content
      * @return JsonObject representation of schemLocation xml Attribute from given elements
      */
-    private JsonObject getJsonObjectFromResource(EPackage ePackage, Map<String, String> handleBySchemaLocationMap, Resource resource, StringBuffer xsiSchemaLocation) {
-        JsonObject jsonObject = null;
+    private JsonObjectProperty getJsonObjectFromResource(EPackage ePackage, Map<String, String> handleBySchemaLocationMap, Resource resource) {
+        JsonObjectProperty jsonObjectProperty = null;
         String nsURI = null;
         if (this.extendedMetaData == null) {
             nsURI = ePackage.getNsURI();
@@ -727,10 +729,10 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
             boolean bAndNotC = uri == null && nsURI != null;
             boolean notBAndD = uri != null && !uri.toString().equals(nsURI);
             if (bAndNotC || notBAndD) {
-                jsonObject = this.getJsonObjectFromURI(ePackage, xsiSchemaLocation, nsURI, uri);
+                jsonObjectProperty = this.getJsonObjectPropertyFromURI(ePackage, nsURI, uri);
             }
         }
-        return jsonObject;
+        return jsonObjectProperty;
     }
 
     /**
@@ -746,12 +748,7 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      *            the URI
      * @return JsonObject representation of schemLocation xml Attribute from given elements
      */
-    private JsonObject getJsonObjectFromURI(EPackage ePackage, StringBuffer xsiSchemaLocation, String nsURI, URI uri) {
-
-        if (xsiSchemaLocation.length() > 0) {
-            xsiSchemaLocation.append(' ');
-        }
-        xsiSchemaLocation.append(nsURI);
+    private JsonObjectProperty getJsonObjectPropertyFromURI(EPackage ePackage, String nsURI, URI uri) {
         String location = this.helper.getHREF(ePackage);
         location = this.convertURI(location);
         if (location.endsWith("#/")) { //$NON-NLS-1$
@@ -760,9 +757,7 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                 location += IGsonConstants.FRAGMENT_SEPARATOR + uri.fragment();
             }
         }
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.add(xsiSchemaLocation.toString(), new JsonPrimitive(location));
-        return jsonObject;
+        return new JsonObjectProperty(nsURI, new JsonPrimitive(location));
     }
 
     /**
