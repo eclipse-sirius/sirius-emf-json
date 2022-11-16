@@ -228,7 +228,7 @@ public abstract class AbstractEMFJsonTests {
      *            the path where the ecore model is
      * @return the EPackage match the mModelPath
      */
-    private EPackage loadMetaModel(String mModelPath) {
+    protected EPackage loadMetaModel(String mModelPath) {
         EPackage ePackage = null;
         Resource ecoreMetamodelResource = this.loadResource(mModelPath, Lists.newArrayList((EPackage) EcorePackage.eINSTANCE));
         if (ecoreMetamodelResource != null && ecoreMetamodelResource.getContents().size() > 0 && ecoreMetamodelResource.getContents().get(0) instanceof EPackage) {
