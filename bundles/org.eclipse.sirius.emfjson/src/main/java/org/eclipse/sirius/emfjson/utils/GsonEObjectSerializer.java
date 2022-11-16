@@ -31,8 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.xml.bind.DatatypeConverter;
-
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.EMap;
 import org.eclipse.emf.common.util.URI;
@@ -89,6 +87,11 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      * In case of serialize non containment references, where the reference is in an other document.
      */
     private static final int CROSS_DOC = 2;
+
+    /**
+     * Hexadecimal digits.
+     */
+    private static final char[] DIGITS = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
     /**
      * the helper.
@@ -1057,18 +1060,35 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                 Collection<?> collection = (Collection<?>) value;
                 for (Object object : collection) {
                     if (object instanceof byte[]) {
-                        jsonArray.add(new JsonPrimitive(DatatypeConverter.printHexBinary((byte[]) object)));
+                        jsonArray.add(new JsonPrimitive(this.toHexString((byte[]) object)));
                     }
                 }
             }
             jsonElement = jsonArray;
         } else {
             if (value instanceof byte[]) {
-                jsonElement = new JsonPrimitive(DatatypeConverter.printHexBinary((byte[]) value));
+                jsonElement = new JsonPrimitive(this.toHexString((byte[]) value));
             }
         }
 
         return jsonElement;
+    }
+
+    /**
+     * Converts an array of bytes into an hexadecimal string.
+     *
+     * @param source
+     *            the source bytes.
+     * @return an hexadecimal representation of the source bytes.
+     */
+    private String toHexString(byte[] source) {
+        char[] target = new char[source.length * 2];
+        for (int i = 0; i < source.length; i++) {
+            byte b = source[i];
+            target[2 * i] = DIGITS[(b >> 4) & 0xf];
+            target[2 * i + 1] = DIGITS[b & 0x0f];
+        }
+        return new String(target);
     }
 
     /**
