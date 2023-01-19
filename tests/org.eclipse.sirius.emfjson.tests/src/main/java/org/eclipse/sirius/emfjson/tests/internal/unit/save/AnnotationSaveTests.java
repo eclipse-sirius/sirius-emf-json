@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Obeo.
+ * Copyright (c) 2020, 2023 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -111,5 +111,13 @@ public class AnnotationSaveTests extends AbstractEMFJsonTests {
     @Test
     public void testEAnnotationsSerializationOnLiteral() {
         this.testSave("TestLiteralAnnotation.ecore"); //$NON-NLS-1$
+    }
+
+    /**
+     * Test the EAnnotations serialization on Literal.
+     */
+    @Test
+    public void testEAnnotationsWithDataSerialization() {
+        this.testSave("TestClassAnnotationWithData.ecore"); //$NON-NLS-1$
     }
 }
