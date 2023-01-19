@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2022 Obeo.
+ * Copyright (c) 2020, 2023 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -640,6 +640,13 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                 array.add(new JsonPrimitive(this.removeFragmentSeparator(this.helper.deresolve(EcoreUtil.getURI(eObject)).toString())));
             }
             object.add(IGsonConstants.REFERENCES, array);
+        }
+
+        // EAnnotation contents
+        EList<EObject> contents = eAnnotation.getContents();
+        if (contents != null && contents.size() > 0) {
+            JsonElement jsonElement = this.serializeEReference(eAnnotation, EcorePackage.eINSTANCE.getEAnnotation_Contents());
+            object.add(IGsonConstants.CONTENTS, jsonElement);
         }
 
         // EAnnotation details
