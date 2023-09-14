@@ -24,12 +24,14 @@ import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -863,10 +865,18 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      *            The EObject to serialize
      * @return A JsonObject containing all the properties of the given object
      */
+    @SuppressWarnings("unchecked")
     private JsonObject serializeEAllStructuralFeatures(EObject eObject) {
         JsonObject properties = new JsonObject();
         EClass eClass = eObject.eClass();
-        EList<EStructuralFeature> eAllStructuralFeatures = eClass.getEAllStructuralFeatures();
+        List<EStructuralFeature> eAllStructuralFeatures = eClass.getEAllStructuralFeatures();
+
+        Object orderFeatures = this.options.get(JsonResource.OPTION_SAVE_ORDER_FEATURES_COMPARATOR);
+        if (orderFeatures instanceof Comparator<?>) {
+            eAllStructuralFeatures = eAllStructuralFeatures.stream()//
+                    .sorted((Comparator<? super EStructuralFeature>) orderFeatures)//
+                    .collect(Collectors.toList());
+        }
 
         for (EStructuralFeature eStructuralFeature : eAllStructuralFeatures) {
             if (this.shouldSerialize(eObject, eStructuralFeature)) {

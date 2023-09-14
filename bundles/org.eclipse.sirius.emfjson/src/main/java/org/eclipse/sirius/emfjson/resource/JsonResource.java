@@ -418,6 +418,8 @@ public interface JsonResource extends Resource {
      */
     String OPTION_ID_MANAGER = "OPTION_ID_MANAGER"; //$NON-NLS-1$
 
+    Object OPTION_SAVE_ORDER_FEATURES_COMPARATOR = "OPTION_SAVE_ORDER_FEATURES";
+
     /**
      * Associate an ID to the {@link EObject}.
      *
