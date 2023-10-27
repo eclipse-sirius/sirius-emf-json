@@ -447,7 +447,9 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
             Set<Entry<String, JsonElement>> entrySet = properties.entrySet();
             for (Entry<String, JsonElement> entry : entrySet) {
                 EStructuralFeature eStructuralFeature = eClass.getEStructuralFeature(entry.getKey());
-
+                if (this.extendedMetaData != null) {
+                    eStructuralFeature = this.extendedMetaData.getElement(eClass, eClass.getEPackage().getNsURI(), entry.getKey());
+                }
                 if (eStructuralFeature instanceof EAttribute) {
                     this.deserializeEAttribute((EAttribute) eStructuralFeature, entry.getValue(), eObject);
                 } else if (eStructuralFeature instanceof EReference) {
