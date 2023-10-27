@@ -1,0 +1,25 @@
+{
+  "json": {
+    "version": "1.0",
+    "encoding": "utf-8"
+  },
+  "ns": {
+    "emfjson": "http://obeo.fr/emfjson",
+    "nodes": "http://www.obeo.fr/EMFJson"
+  },
+  "schemaLocation": {
+    "http://www.obeo.fr/EMFJson": "../../../nodes.ecore"
+  },
+  "content": [
+    {
+      "eClass": "nodes:NodeMultiValuedAttribute",
+      "data": {
+        "multiStringAttributeOld": [ 
+			"multiStringAttribute value 1", 
+			"multiStringAttribute value 2", 
+			"multiStringAttribute value 3" 
+		]
+      }
+    }
+  ]
+}
