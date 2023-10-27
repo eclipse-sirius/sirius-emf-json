@@ -20,4 +20,3 @@ Import-Package: javax.xml.bind;version="0.0.0",
  org.eclipse.emf.ecore.resource.impl;version="0.0.0",
  org.eclipse.emf.ecore.util;version="0.0.0"
 Automatic-Module-Name: org.eclipse.sirius.emfjson
-Require-Bundle: javax.xml.bind;bundle-version="2.2.0"
