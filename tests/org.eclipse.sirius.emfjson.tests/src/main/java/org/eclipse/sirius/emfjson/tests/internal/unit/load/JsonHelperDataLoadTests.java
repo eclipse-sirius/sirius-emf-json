@@ -72,4 +72,45 @@ public class JsonHelperDataLoadTests extends AbstractEMFJsonTests {
         this.testLoad("TestChangeAttributeTypeMulti.xmi"); //$NON-NLS-1$
     }
 
+    /**
+     * Change the value of a monovalued EAttribute.
+     */
+    @Test
+    public void testChangeAttributeValueMono() {
+        JsonHelper jsonHelper = new JsonHelper() {
+            @Override
+            public void setValue(EObject object, EStructuralFeature feature, Object value) {
+                Object newValue = value;
+                if ("NodeSingleValueAttribute".equals(feature.getEContainingClass().getName()) && "singleStringAttribute".equals(feature.getName())) { //$NON-NLS-1$ //$NON-NLS-2$
+                    newValue = ((String) value).toUpperCase();
+                }
+                super.setValue(object, feature, newValue);
+            }
+
+        };
+
+        this.options.put(JsonResource.OPTION_CUSTOM_HELPER, jsonHelper);
+        this.testLoad("TestChangeAttributeValueMono.xmi"); //$NON-NLS-1$
+    }
+
+    /**
+     * Change the value of a multivalued EAttribute.
+     */
+    @Test
+    public void testChangeAttributeValueMulti() {
+        JsonHelper jsonHelper = new JsonHelper() {
+            @Override
+            public void setValue(EObject object, EStructuralFeature feature, Object value) {
+                Object newValue = value;
+                if ("NodeMultiValuedAttribute".equals(feature.getEContainingClass().getName()) && "multiStringAttribute".equals(feature.getName())) { //$NON-NLS-1$ //$NON-NLS-2$
+                    newValue = ((String) value).toUpperCase();
+                }
+                super.setValue(object, feature, newValue);
+            }
+        };
+
+        this.options.put(JsonResource.OPTION_CUSTOM_HELPER, jsonHelper);
+        this.testLoad("TestChangeAttributeValueMulti.xmi"); //$NON-NLS-1$
+    }
+
 }
