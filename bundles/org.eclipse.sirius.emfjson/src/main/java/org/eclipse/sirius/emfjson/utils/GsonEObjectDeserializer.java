@@ -911,20 +911,39 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
         EDataType dataType = eAttribute.getEAttributeType();
         if (!eAttribute.isMany()) {
             String newValue = this.getAsFlexibleString(jsonElement);
-            Object value = EcoreUtil.createFromString(dataType, newValue);
+            Object value = this.tryCreateDataTypeFromString(dataType, newValue);
             this.helper.setValue(eObject, eAttribute, value);
         } else {
             JsonArray asJsonArray = this.getAsFlexibleArray(jsonElement);
             Object eGet = this.helper.getValue(eObject, eAttribute);
             if (eGet instanceof Collection<?>) {
                 for (JsonElement jElement : asJsonArray) {
-                    Object value = EcoreUtil.createFromString(dataType, jElement.getAsString());
-                    @SuppressWarnings("unchecked")
-                    Collection<Object> collection = (Collection<Object>) eGet;
-                    collection.add(value);
+                    Object value = this.tryCreateDataTypeFromString(dataType, jElement.getAsString());
+                    this.helper.setValue(eObject, eAttribute, value);
                 }
             }
         }
+    }
+
+    /**
+     * Try to create a {@link EDataType} instance from a serialized form of the value. If the serialization is not
+     * compatible with the given EDataType, returns the serialized form of the value unchanged.
+     *
+     * @param dataType
+     *            The {@link EDataType} to instantiate
+     * @param serializedValue
+     *            The serialized form of the value
+     * @return A new EDataType instance or the given serializedValue if the EDataType could not be instantiated from the
+     *         serializedValue.
+     */
+    private Object tryCreateDataTypeFromString(EDataType dataType, String serializedValue) {
+        Object value;
+        try {
+            value = EcoreUtil.createFromString(dataType, serializedValue);
+        } catch (IllegalArgumentException e) {
+            value = serializedValue;
+        }
+        return value;
     }
 
     /**

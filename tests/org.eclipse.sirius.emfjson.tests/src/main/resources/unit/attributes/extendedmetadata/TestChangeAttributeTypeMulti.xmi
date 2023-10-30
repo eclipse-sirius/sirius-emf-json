@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="ASCII"?>
+<nodes:NodeMultiValuedAttribute
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:nodes="http://www.obeo.fr/EMFJson"
+    xsi:schemaLocation="http://www.obeo.fr/EMFJson ../../../nodes.ecore">
+  <multiIntAttribute>3</multiIntAttribute>
+  <multiIntAttribute>6</multiIntAttribute>
+  <multiIntAttribute>9</multiIntAttribute>
+</nodes:NodeMultiValuedAttribute>
