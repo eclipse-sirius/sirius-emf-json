@@ -887,7 +887,12 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
         EDataType dataType = eAttribute.getEAttributeType();
         if (!eAttribute.isMany()) {
             String newValue = this.getAsFlexibleString(jsonElement);
-            Object value = EcoreUtil.createFromString(dataType, newValue);
+            Object value;
+            try {
+                value = EcoreUtil.createFromString(dataType, newValue);
+            } catch (IllegalArgumentException e) {
+                value = newValue;
+            }
             this.helper.setValue(eObject, eAttribute, value);
         } else {
             JsonArray asJsonArray = this.getAsFlexibleArray(jsonElement);

@@ -43,6 +43,7 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.sirius.emfjson.resource.JsonResource;
 import org.eclipse.sirius.emfjson.resource.JsonResourceFactoryImpl;
 import org.eclipse.sirius.emfjson.resource.JsonResourceImpl;
+import org.eclipse.sirius.emfjson.utils.JsonHelper;
 import org.junit.Assert;
 
 /**
@@ -276,6 +277,10 @@ public abstract class AbstractEMFJsonTests {
             resource = resourceSet.createResource(uri);
             String extension = resource.getURI().fileExtension();
             if (extension.equals(JsonResourceFactoryImpl.EXTENSION)) {
+                if (this.options.get(JsonResource.OPTION_CUSTOM_HELPER) instanceof JsonHelper) {
+                    JsonHelper jsonHelper = (JsonHelper) this.options.get(JsonResource.OPTION_CUSTOM_HELPER);
+                    jsonHelper.setResource(resource);
+                }
                 resource.load(inputStream, this.options);
             } else {
                 resource.load(inputStream, Collections.EMPTY_MAP);
