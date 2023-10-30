@@ -14,6 +14,7 @@
 package org.eclipse.sirius.emfjson.utils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -581,7 +582,8 @@ public class JsonHelper {
     }
 
     /**
-     * Sets the value of the feature for the given object.
+     * Sets the value of the feature for the given object. If the feature is multivalued, add the value to the
+     * collection of values already set.
      *
      * @param object
      *            the given object
@@ -591,7 +593,13 @@ public class JsonHelper {
      *            the value to set
      */
     public void setValue(EObject object, EStructuralFeature feature, Object value) {
-        object.eSet(feature, value);
+        if (feature.isMany()) {
+            @SuppressWarnings("unchecked")
+            Collection<Object> collection = (Collection<Object>) object.eGet(feature);
+            collection.add(value);
+        } else {
+            object.eSet(feature, value);
+        }
     }
 
     /**
