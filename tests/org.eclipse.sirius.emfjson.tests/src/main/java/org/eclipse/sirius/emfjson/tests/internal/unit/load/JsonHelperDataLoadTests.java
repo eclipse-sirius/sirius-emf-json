@@ -122,4 +122,34 @@ public class JsonHelperDataLoadTests extends AbstractEMFJsonTests {
         this.testLoad("TestChangeAttributeValueMono.xmi"); //$NON-NLS-1$
     }
 
+    /**
+     * Change the value of a multivalued EAttribute.
+     */
+    @Test
+    public void testChangeAttributeValueMulti() {
+        // CHECKSTYLE:OFF
+        JsonHelper jsonHelper = new JsonHelper() {
+
+            /**
+             * {@inheritDoc}
+             *
+             * @see org.eclipse.sirius.emfjson.utils.JsonHelper#setValue(org.eclipse.emf.ecore.EObject,
+             *      org.eclipse.emf.ecore.EStructuralFeature, java.lang.Object)
+             */
+            @Override
+            public void setValue(EObject object, EStructuralFeature feature, Object value) {
+                Object newValue = value;
+                if ("NodeMultiValuedAttribute".equals(feature.getEContainingClass().getName()) && "multiStringAttribute".equals(feature.getName())) { //$NON-NLS-1$ //$NON-NLS-2$
+                    newValue = ((String) value).toUpperCase();
+                }
+                super.setValue(object, feature, newValue);
+            }
+
+        };
+
+        // CHECKSTYLE:ON
+        this.options.put(JsonResource.OPTION_CUSTOM_HELPER, jsonHelper);
+        this.testLoad("TestChangeAttributeValueMulti.xmi"); //$NON-NLS-1$
+    }
+
 }
