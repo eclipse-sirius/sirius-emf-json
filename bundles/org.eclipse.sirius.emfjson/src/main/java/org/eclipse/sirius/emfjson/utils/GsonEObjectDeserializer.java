@@ -12,6 +12,7 @@
  *******************************************************************************/
 package org.eclipse.sirius.emfjson.utils;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -22,6 +23,7 @@ import com.google.gson.JsonParseException;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +40,7 @@ import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.EDataType;
+import org.eclipse.emf.ecore.EEnum;
 import org.eclipse.emf.ecore.EFactory;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
@@ -886,19 +889,53 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     private void deserializeEAttribute(EAttribute eAttribute, JsonElement jsonElement, EObject eObject) {
         EDataType dataType = eAttribute.getEAttributeType();
         if (!eAttribute.isMany()) {
-            String newValue = this.getAsFlexibleString(jsonElement);
-            Object value = this.tryCreateDataTypeFromString(dataType, newValue);
+            Object value = null;
+            if (this.isPojo(dataType)) {
+                value = new Gson().fromJson(jsonElement, eAttribute.getEType().getInstanceClass());
+            } else {
+                String newValue = this.getAsFlexibleString(jsonElement);
+                value = this.tryCreateDataTypeFromString(dataType, newValue);
+            }
             this.helper.setValue(eObject, eAttribute, value);
         } else {
             JsonArray asJsonArray = this.getAsFlexibleArray(jsonElement);
             Object eGet = this.helper.getValue(eObject, eAttribute);
             if (eGet instanceof Collection<?>) {
                 for (JsonElement jElement : asJsonArray) {
-                    Object value = this.tryCreateDataTypeFromString(dataType, jElement.getAsString());
+                    Object value = null;
+                    if (this.isPojo(dataType)) {
+                        value = new Gson().fromJson(jElement, eAttribute.getEType().getInstanceClass());
+                    } else {
+                        value = this.tryCreateDataTypeFromString(dataType, jElement.getAsString());
+                    }
                     this.helper.setValue(eObject, eAttribute, value);
                 }
             }
         }
+    }
+
+    /**
+     * List of the datatypes defined by the {@link EcorePackage}.
+     */
+    private static final List<EDataType> ECORE_PACKAGE_DATA_TYPES = Arrays.asList(EcorePackage.eINSTANCE.getEString(), EcorePackage.eINSTANCE.getEBoolean(), EcorePackage.eINSTANCE.getEBooleanObject(),
+            EcorePackage.eINSTANCE.getEInt(), EcorePackage.eINSTANCE.getEIntegerObject(), EcorePackage.eINSTANCE.getEBigDecimal(), EcorePackage.eINSTANCE.getEBigInteger(),
+            EcorePackage.eINSTANCE.getEByte(), EcorePackage.eINSTANCE.getEByteArray(), EcorePackage.eINSTANCE.getEByteObject(), EcorePackage.eINSTANCE.getEChar(),
+            EcorePackage.eINSTANCE.getECharacterObject(), EcorePackage.eINSTANCE.getEDate(), EcorePackage.eINSTANCE.getEDouble(), EcorePackage.eINSTANCE.getEDoubleObject(),
+            EcorePackage.eINSTANCE.getEFloat(), EcorePackage.eINSTANCE.getEFloatObject(), EcorePackage.eINSTANCE.getELong(), EcorePackage.eINSTANCE.getELongObject(),
+            EcorePackage.eINSTANCE.getEShort(), EcorePackage.eINSTANCE.getEShortObject());
+
+    /**
+     * Tests if the given {@link EDataType} is a POJO.
+     *
+     * @param dataType
+     *            A {@link EDataType} to test
+     * @return true if the given {@link EDataType} is not one of the {@link EcorePackage} DataTypes nor an
+     *         {@link EEnum}.
+     */
+    private boolean isPojo(EDataType dataType) {
+        return !ECORE_PACKAGE_DATA_TYPES.contains(dataType) && //
+                dataType.eClass() != EcorePackage.eINSTANCE.getEEnum() && //
+                dataType.getInstanceClass() != null;
     }
 
     /**

@@ -49,4 +49,20 @@ public class DataTypeLoadTests extends AbstractEMFJsonTests {
         this.testLoad("NodeMultipleCustomDataType.xmi"); //$NON-NLS-1$
     }
 
+    /**
+     * Test deserialization of POJO EDataType EAttribute monovalued.
+     */
+    @Test
+    public void testLoadSingleValueAttributePojoDataType() {
+        this.testLoad("NodeSingleValueAttributePojoDataType.xmi"); //$NON-NLS-1$
+    }
+
+    /**
+     * Test deserialization of POJO EDataType EAttribute multivalued.
+     */
+    @Test
+    public void testLoadMultiValuedAttributePojoDataType() {
+        this.testLoad("NodeMultiValuedAttributePojoDataType.xmi"); //$NON-NLS-1$
+    }
+
 }

@@ -12,6 +12,7 @@
  *******************************************************************************/
 package org.eclipse.sirius.emfjson.utils;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -1017,22 +1018,31 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
 
         Object value = this.helper.getValue(eObject, eAttribute);
         EFactory eFactoryInstance = eAttribute.getEType().getEPackage().getEFactoryInstance();
+        boolean isPojo = eAttribute.getEAttributeType().getInstanceClass() != null;
         if (eAttribute.isMany()) {
             JsonArray jsonArray = new JsonArray();
             if (value instanceof Collection) {
                 Collection<?> collection = (Collection<?>) value;
                 for (Object object : collection) {
-                    jsonArray.add(new JsonPrimitive(eFactoryInstance.convertToString(eAttribute.getEAttributeType(), object)));
+                    if (isPojo) {
+                        jsonArray.add(new Gson().toJsonTree(object));
+                    } else {
+                        jsonArray.add(new JsonPrimitive(eFactoryInstance.convertToString(eAttribute.getEAttributeType(), object)));
+                    }
                 }
             }
             jsonElement = jsonArray;
         } else {
-            String stringValue = eFactoryInstance.convertToString(eAttribute.getEAttributeType(), value);
-
-            if (stringValue == null) {
-                stringValue = ""; //$NON-NLS-1$
+            if (isPojo) {
+                jsonElement = new Gson().toJsonTree(value);
+            } else {
+                String stringValue = eFactoryInstance.convertToString(eAttribute.getEAttributeType(), value);
+                if (stringValue == null) {
+                    stringValue = ""; //$NON-NLS-1$
+                }
+                jsonElement = new JsonPrimitive(stringValue);
             }
-            jsonElement = new JsonPrimitive(stringValue);
+
         }
 
         return jsonElement;
