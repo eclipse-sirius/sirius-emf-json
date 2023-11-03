@@ -21,7 +21,7 @@ import org.junit.Test;
 /**
  * Tests loading with ExtendedMetaData.
  */
-public class ExtendedMetaDataLoadTests extends AbstractEMFJsonTests {
+public class ExtendedMetaDataAttributesLoadTests extends AbstractEMFJsonTests {
 
     /**
      * {@inheritDoc}
@@ -30,14 +30,14 @@ public class ExtendedMetaDataLoadTests extends AbstractEMFJsonTests {
      */
     @Override
     protected String getRootPath() {
-        return "/unit/attributes/extendedmetadata/"; //$NON-NLS-1$
+        return "/unit/references/extendedmetadata/"; //$NON-NLS-1$
     }
 
     /**
-     * Change the name of a monovalued EAttribute.
+     * Change the name of a monovalued EReference.
      */
     @Test
-    public void testChangeAttributeNameMono() {
+    public void testChangeReferenceNameMono() {
         // CHECKSTYLE:OFF
         ExtendedMetaData metaData = new BasicExtendedMetaData() {
 
@@ -49,23 +49,25 @@ public class ExtendedMetaDataLoadTests extends AbstractEMFJsonTests {
              */
             @Override
             public EStructuralFeature getElement(EClass eClass, String namespace, String name) {
-                if ("NodeSingleValueAttribute".equals(eClass.getName()) && "singleStringAttributeOld".equals(name)) { //$NON-NLS-1$ //$NON-NLS-2$
-                    return eClass.getEStructuralFeature("singleStringAttribute"); //$NON-NLS-1$
+                if ("NodeSingleValueReference".equals(eClass.getName()) && "singleValuedReferenceOld".equals(name)) {
+                    // $NON-NLS-1$ //$NON-NLS-2$
+                    return eClass.getEStructuralFeature("singleValuedReference"); //$NON-NLS-1$
                 }
-                return super.getElement(eClass, namespace, name);
+                // return super.getElement(eClass, namespace, name); // Doesn't work
+                return eClass.getEStructuralFeature(name);
             }
 
         };
         // CHECKSTYLE:ON
         this.options.put(JsonResource.OPTION_EXTENDED_META_DATA, metaData);
-        this.testLoad("TestChangeAttributeNameMono.xmi"); //$NON-NLS-1$
+        this.testLoad("TestChangeReferenceNameMono.xmi"); //$NON-NLS-1$
     }
 
     /**
-     * Change the name of a multivalued EAttribute.
+     * Change the name of a multivalued EReference.
      */
     @Test
-    public void testChangeAttributeNameMulti() {
+    public void testChangeReferenceNameMulti() {
         // CHECKSTYLE:OFF
         ExtendedMetaData metaData = new BasicExtendedMetaData() {
 
@@ -80,13 +82,14 @@ public class ExtendedMetaDataLoadTests extends AbstractEMFJsonTests {
                 if ("NodeMultiValuedAttribute".equals(eClass.getName()) && "multiStringAttributeOld".equals(name)) { //$NON-NLS-1$ //$NON-NLS-2$
                     return eClass.getEStructuralFeature("multiStringAttribute"); //$NON-NLS-1$
                 }
-                return super.getElement(eClass, namespace, name);
+                // return super.getElement(eClass, namespace, name); // Doesn't work
+                return eClass.getEStructuralFeature(name);
             }
 
         };
         // CHECKSTYLE:ON
         this.options.put(JsonResource.OPTION_EXTENDED_META_DATA, metaData);
-        this.testLoad("TestChangeAttributeNameMulti.xmi"); //$NON-NLS-1$
+        this.testLoad("TestChangeReferenceNameMulti.xmi"); //$NON-NLS-1$
     }
 
 }
