@@ -25,6 +25,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 
 import org.eclipse.emf.common.util.BasicEList;
@@ -450,4 +451,24 @@ public class SerializeOptionsTests extends AbstractEMFJsonTests {
         this.testSave("SimpleModelWithOnlyDefaultValueForResourceHandlerPreSavingTest.xmi"); //$NON-NLS-1$
 
     }
+
+    /**
+     * Test the serialization with feature order comparator.
+     */
+    @Test
+    public void testSerializationWithFeatureOrderComparator() {
+
+        // A comparator to sort the feature on their name length.
+        Comparator<EStructuralFeature> featuresComparator = new Comparator<EStructuralFeature>() {
+            @Override
+            public int compare(EStructuralFeature o1, EStructuralFeature o2) {
+                return o1.getName().length() - o2.getName().length();
+            }
+        };
+
+        this.options.put(JsonResource.OPTION_SAVE_FEATURES_ORDER_COMPARATOR, featuresComparator);
+        this.testSave("TestSerializationWithFeatureOrderComparator.xmi"); //$NON-NLS-1$
+
+    }
+
 }
