@@ -16,6 +16,7 @@ import com.google.gson.JsonElement;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Comparator;
 import java.util.Map;
 
 import org.eclipse.emf.common.util.URI;
@@ -417,6 +418,12 @@ public interface JsonResource extends Resource {
      * An option to provide an {@link IDManager} to handle the ID of an {@link EObject} in a resource.
      */
     String OPTION_ID_MANAGER = "OPTION_ID_MANAGER"; //$NON-NLS-1$
+
+    /**
+     * An option to provide a {@link Comparator} of {@link EStructuralFeature} to determine the order of the attributes
+     * in the serialized Json.
+     */
+    Object OPTION_SAVE_FEATURES_ORDER_COMPARATOR = "OPTION_SAVE_FEATURES_ORDER_COMPARATOR"; //$NON-NLS-1$
 
     /**
      * Associate an ID to the {@link EObject}.
