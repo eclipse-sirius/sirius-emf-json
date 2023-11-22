@@ -44,7 +44,9 @@ public class ExtendedMetaDataReferencesLoadTests extends AbstractEMFJsonTests {
                 if ("NodeSingleValueAttribute".equals(eClass.getName()) && "singleStringAttributeOld".equals(name)) { //$NON-NLS-1$ //$NON-NLS-2$
                     return eClass.getEStructuralFeature("singleStringAttribute"); //$NON-NLS-1$
                 }
-                return super.getElement(eClass, namespace, name);
+                // return super.getElement(eClass, namespace, name); // Doesn't work because the super implementation in
+                // Ecore ends up checking that the string is XMI
+                return eClass.getEStructuralFeature(name);
             }
 
         };
@@ -71,7 +73,9 @@ public class ExtendedMetaDataReferencesLoadTests extends AbstractEMFJsonTests {
                 if ("NodeMultiValuedAttribute".equals(eClass.getName()) && "multiStringAttributeOld".equals(name)) { //$NON-NLS-1$ //$NON-NLS-2$
                     return eClass.getEStructuralFeature("multiStringAttribute"); //$NON-NLS-1$
                 }
-                return super.getElement(eClass, namespace, name);
+                // return super.getElement(eClass, namespace, name); // Doesn't work because the super implementation in
+                // Ecore ends up checking that the string is XMI
+                return eClass.getEStructuralFeature(name);
             }
 
         };

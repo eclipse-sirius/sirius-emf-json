@@ -13,8 +13,14 @@
 
 package org.eclipse.sirius.emfjson.tests.internal.unit.load;
 
+import java.util.function.Predicate;
+
+import org.eclipse.emf.ecore.EDataType;
+import org.eclipse.sirius.emfjson.resource.JsonResource;
 import org.eclipse.sirius.emfjson.tests.internal.AbstractEMFJsonTests;
 import org.junit.Test;
+
+import model.TestPojoDataTypeImpl;
 
 /**
  * Tests class for EDataType deserialization.
@@ -47,6 +53,38 @@ public class DataTypeLoadTests extends AbstractEMFJsonTests {
     @Test
     public void testMultipleSerialiationDataType() {
         this.testLoad("NodeMultipleCustomDataType.xmi"); //$NON-NLS-1$
+    }
+
+    /**
+     * Test deserialization of POJO EDataType EAttribute monovalued.
+     */
+    @Test
+    public void testLoadSingleValueAttributePojoDataType() {
+        Predicate<EDataType> eDataTypeJsonSerializableTester = new Predicate<EDataType>() {
+            @Override
+            public boolean test(EDataType eDataType) {
+                return eDataType.getInstanceClass() == TestPojoDataTypeImpl.class;
+            }
+        };
+        this.options.put(JsonResource.OPTION_SHOULD_EDATATYPE_BE_SERIALIZED_IN_JSON_PREDICATE, eDataTypeJsonSerializableTester);
+
+        this.testLoad("NodeSingleValueAttributePojoDataType.xmi"); //$NON-NLS-1$
+    }
+
+    /**
+     * Test deserialization of POJO EDataType EAttribute multivalued.
+     */
+    @Test
+    public void testLoadMultiValuedAttributePojoDataType() {
+        Predicate<EDataType> eDataTypeJsonSerializableTester = new Predicate<EDataType>() {
+            @Override
+            public boolean test(EDataType eDataType) {
+                return eDataType.getInstanceClass() == TestPojoDataTypeImpl.class;
+            }
+        };
+        this.options.put(JsonResource.OPTION_SHOULD_EDATATYPE_BE_SERIALIZED_IN_JSON_PREDICATE, eDataTypeJsonSerializableTester);
+
+        this.testLoad("NodeMultiValuedAttributePojoDataType.xmi"); //$NON-NLS-1$
     }
 
 }
