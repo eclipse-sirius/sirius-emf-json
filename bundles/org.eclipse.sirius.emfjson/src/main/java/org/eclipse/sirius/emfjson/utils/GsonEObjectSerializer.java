@@ -12,8 +12,10 @@
  *******************************************************************************/
 package org.eclipse.sirius.emfjson.utils;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
@@ -31,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.util.EList;
@@ -1062,20 +1065,43 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
             if (value instanceof Collection) {
                 Collection<?> collection = (Collection<?>) value;
                 for (Object object : collection) {
-                    jsonArray.add(new JsonPrimitive(eFactoryInstance.convertToString(eAttribute.getEAttributeType(), object)));
+                    if (object == null) {
+                        jsonArray.add(JsonNull.INSTANCE);
+                    } else if (this.shouldEDataTypeBeSerializedInJson(eAttribute.getEAttributeType())) {
+                        jsonArray.add(new Gson().toJsonTree(object));
+                    } else {
+                        jsonArray.add(new JsonPrimitive(eFactoryInstance.convertToString(eAttribute.getEAttributeType(), object)));
+                    }
                 }
             }
             jsonElement = jsonArray;
         } else {
             String stringValue = eFactoryInstance.convertToString(eAttribute.getEAttributeType(), value);
-
             if (stringValue == null) {
-                stringValue = ""; //$NON-NLS-1$
+                jsonElement = JsonNull.INSTANCE;
+            } else if (this.shouldEDataTypeBeSerializedInJson(eAttribute.getEAttributeType())) {
+                jsonElement = new Gson().toJsonTree(value);
+            } else {
+                jsonElement = new JsonPrimitive(stringValue);
             }
-            jsonElement = new JsonPrimitive(stringValue);
         }
 
         return jsonElement;
+    }
+
+    /**
+     * Test the given {@link EDataType} against the
+     * {@link JsonResource#OPTION_SHOULD_EDATATYPE_BE_SERIALIZED_IN_JSON_PREDICATE} option. If the option is not set,
+     * return false.
+     *
+     * @param eDataType
+     *            The {@link EDataType} to test.
+     * @return true if the given {@link EDataType} should be deserialized as a Json tree.
+     */
+    private boolean shouldEDataTypeBeSerializedInJson(EDataType eDataType) {
+        @SuppressWarnings("unchecked")
+        Predicate<EDataType> shouldEDataTypeBeSerializedInJsonPredicate = (Predicate<EDataType>) this.options.get(JsonResource.OPTION_SHOULD_EDATATYPE_BE_SERIALIZED_IN_JSON_PREDICATE);
+        return shouldEDataTypeBeSerializedInJsonPredicate != null && shouldEDataTypeBeSerializedInJsonPredicate.test(eDataType);
     }
 
     /**

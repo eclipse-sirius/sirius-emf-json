@@ -12,6 +12,7 @@
  *******************************************************************************/
 package org.eclipse.sirius.emfjson.resource;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -19,8 +20,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EDataType;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
@@ -426,6 +429,12 @@ public interface JsonResource extends Resource {
      * in the serialized Json.
      */
     Object OPTION_SAVE_FEATURES_ORDER_COMPARATOR = "OPTION_SAVE_FEATURES_ORDER_COMPARATOR"; //$NON-NLS-1$
+
+    /**
+      * Specify a {@link Predicate} evaluating to true if a given {@link EDataType} should be serialized to/from Json
+      * with {@link Gson}.
+      */
+     String OPTION_SHOULD_EDATATYPE_BE_SERIALIZED_IN_JSON_PREDICATE = "shouldEDataTypeBeSerializedInJsonPredicate"; //$NON-NLS-1$
 
     /**
      * An option to provide an ISerializationListener.

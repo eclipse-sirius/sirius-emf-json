@@ -12,6 +12,7 @@
  *******************************************************************************/
 package org.eclipse.sirius.emfjson.utils;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
@@ -922,19 +924,44 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     private void deserializeEAttribute(EAttribute eAttribute, JsonElement jsonElement, EObject eObject) {
         EDataType dataType = eAttribute.getEAttributeType();
         if (!eAttribute.isMany()) {
-            String newValue = this.getAsFlexibleString(jsonElement);
-            Object value = this.tryCreateDataTypeFromString(dataType, newValue);
+            Object value = null;
+            if (this.shouldEDataTypeBeSerializedInJson(dataType)) {
+                value = new Gson().fromJson(jsonElement, eAttribute.getEType().getInstanceClass());
+            } else {
+                String newValue = this.getAsFlexibleString(jsonElement);
+                value = this.tryCreateDataTypeFromString(dataType, newValue);
+            }
             this.helper.setValue(eObject, eAttribute, value);
         } else {
             JsonArray asJsonArray = this.getAsFlexibleArray(jsonElement);
             Object eGet = this.helper.getValue(eObject, eAttribute);
             if (eGet instanceof Collection<?>) {
                 for (JsonElement jElement : asJsonArray) {
-                    Object value = this.tryCreateDataTypeFromString(dataType, jElement.getAsString());
+                    Object value = null;
+                    if (this.shouldEDataTypeBeSerializedInJson(dataType)) {
+                        value = new Gson().fromJson(jElement, eAttribute.getEType().getInstanceClass());
+                    } else {
+                        value = this.tryCreateDataTypeFromString(dataType, jElement.getAsString());
+                    }
                     this.helper.setValue(eObject, eAttribute, value);
                 }
             }
         }
+    }
+
+    /**
+     * Test the given {@link EDataType} against the
+     * {@link JsonResource#OPTION_SHOULD_EDATATYPE_BE_SERIALIZED_IN_JSON_PREDICATE} option. If the option is not set,
+     * return false.
+     *
+     * @param eDataType
+     *            The {@link EDataType} to test.
+     * @return true if the given {@link EDataType} should be deserialized from a Json tree.
+     */
+    private boolean shouldEDataTypeBeSerializedInJson(EDataType eDataType) {
+        @SuppressWarnings("unchecked")
+        Predicate<EDataType> shouldEDataTypeBeSerializedInJsonPredicate = (Predicate<EDataType>) this.options.get(JsonResource.OPTION_SHOULD_EDATATYPE_BE_SERIALIZED_IN_JSON_PREDICATE);
+        return shouldEDataTypeBeSerializedInJsonPredicate != null && shouldEDataTypeBeSerializedInJsonPredicate.test(eDataType);
     }
 
     /**
