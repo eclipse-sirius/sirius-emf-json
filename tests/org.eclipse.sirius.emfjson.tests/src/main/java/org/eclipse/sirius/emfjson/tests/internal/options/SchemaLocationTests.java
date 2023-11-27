@@ -40,4 +40,14 @@ public class SchemaLocationTests extends AbstractEMFJsonTests {
         this.testLoad("SchemaLocation.xmi"); //$NON-NLS-1$
     }
 
+    @Test
+    public void testLoadSchemaLocationWithFragment() {
+        this.testLoad("SchemaLocationWithFragment.xmi"); //$NON-NLS-1$
+    }
+    
+    @Test
+    public void testSaveSchemaLocationWithFragment() {
+        this.testSave("SchemaLocationWithFragment.xmi"); //$NON-NLS-1$
+    }
+
 }

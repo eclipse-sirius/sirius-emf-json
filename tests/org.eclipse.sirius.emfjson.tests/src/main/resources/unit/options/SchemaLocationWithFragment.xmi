@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="ASCII"?>
+<xmi:XMI
+  xmi:version="2.0"
+  xmlns:xmi="http://www.omg.org/XMI"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:dynLib="http://DynamicEcore"
+  xmlns:nodes="http://www.obeo.fr/EMFJson"
+  xsi:schemaLocation="http://DynamicEcore  Dynamic.ecore#CustomEPackageID http://www.obeo.fr/EMFJson ../../nodes.ecore">
+  <nodes:Node/>
+  <dynLib:DynamicEClass/>
+</xmi:XMI>
+

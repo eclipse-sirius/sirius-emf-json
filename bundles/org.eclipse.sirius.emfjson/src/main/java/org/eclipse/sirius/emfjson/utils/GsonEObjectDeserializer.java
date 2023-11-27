@@ -236,14 +236,10 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                     // TODO: in condition, add a test for extendedMetaData (see line 2898 of
                     // XMLHandler.class)
                     uri = this.helper.resolve(uri, this.resourceURI);
-                    Resource ePackageResource = this.resourceSet.getResource(uri, true);
-                    TreeIterator<EObject> iterator = ePackageResource.getAllContents();
-                    while (iterator.hasNext()) {
-                        EObject eObject = iterator.next();
-                        if (eObject instanceof EPackage) {
-                            EPackage ePackage = (EPackage) eObject;
-                            this.resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);
-                        }
+
+                    EPackage ePackage = this.getEPackage(uri);
+                    if (ePackage != null) {
+                        this.resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);
                     }
                 }
             }
@@ -253,6 +249,34 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
         this.deserializeContent(jsonRoot);
 
         return this.rootElements;
+    }
+
+    /**
+     * Gets the EPackage matching the given URI
+     *
+     * @param uri
+     *            an URI
+     * @return a {@link EPackage} or <code>null</code> if not found
+     */
+    private EPackage getEPackage(URI uri) {
+        EPackage ePackage = null;
+        if (uri.hasFragment()) {
+            EObject target = this.resourceSet.getEObject(uri, true);
+            if (target instanceof EPackage) {
+                ePackage = (EPackage) target;
+            }
+        } else {
+            Resource ePackageResource = this.resourceSet.getResource(uri, true);
+            TreeIterator<EObject> iterator = ePackageResource.getAllContents();
+            while (iterator.hasNext()) {
+                EObject eObject = iterator.next();
+                if (eObject instanceof EPackage) {
+                    ePackage = (EPackage) eObject;
+                    break;
+                }
+            }
+        }
+        return ePackage;
     }
 
     /**
