@@ -14,7 +14,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	
+
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
@@ -23,30 +23,36 @@
 		<version>2.3.4-SNAPSHOT</version>
 		<relativePath>../../releng/org.eclipse.sirius.emfjson.releng</relativePath>
 	</parent>
-	
-	
+
+
 	<artifactId>org.eclipse.sirius.emfjson.feature</artifactId>
 	<version>2.3.4-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
-	
+
 	<name>Sirius EMF JSON Feature</name>
-	
+
 	<build>
-    <plugins>
-      <plugin>
-        <groupId>org.eclipse.tycho.extras</groupId>
-        <artifactId>tycho-source-feature-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <id>source-feature</id>
-            <goals>
-              <goal>source-feature</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-source-plugin</artifactId>
+				<version>${tycho-version}</version>
+				<executions>
+					<execution>
+						<id>plugin-source</id>
+						<goals>
+							<goal>plugin-source</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>feature-source</id>
+						<goals>
+							<goal>feature-source</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>
