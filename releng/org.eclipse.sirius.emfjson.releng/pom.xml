@@ -36,9 +36,9 @@
   </modules>
 
   <properties>
-    <tycho-version>1.7.0</tycho-version>
-    <tycho-extras-version>1.7.0</tycho-extras-version>
-    <platform-version-name>2019-06</platform-version-name>
+    <tycho-version>3.0.4</tycho-version>
+    <tycho-extras-version>3.0.4</tycho-extras-version>
+    <platform-version-name>2023-06</platform-version-name>
   </properties>
 
   <distributionManagement>
@@ -210,25 +210,6 @@
             <id>plugin-source</id>
             <goals>
               <goal>plugin-source</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.eclipse.tycho.extras</groupId>
-        <artifactId>tycho-source-feature-plugin</artifactId>
-        <version>${tycho-extras-version}</version>
-        <configuration>
-          <archive>
-            <addMavenDescriptor>false</addMavenDescriptor>
-          </archive>
-        </configuration>
-        <executions>
-          <execution>
-            <id>source-feature</id>
-            <phase>package</phase>
-            <goals>
-              <goal>source-feature</goal>
             </goals>
           </execution>
         </executions>
