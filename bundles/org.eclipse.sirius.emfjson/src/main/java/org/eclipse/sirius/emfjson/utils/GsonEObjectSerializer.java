@@ -688,15 +688,12 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                         xsiNoNamespaceSchemaLocation = this.getNoNamespaceSchemaLocation(ePackage);
                     }
                 } else {
-                    Resource resource = ePackage.eResource();
-                    if (resource != null) {
-                        JsonObjectProperty jsonObjectProperty = this.getJsonObjectFromResource(ePackage, handleBySchemaLocationMap, resource);
-                        if (jsonObjectProperty != null) {
-                            if (jsonObject == null) {
-                                jsonObject = new JsonObject();
-                            }
-                            jsonObject.add(jsonObjectProperty.getKey(), jsonObjectProperty.getElement());
+                    JsonObjectProperty jsonObjectProperty = this.getJsonObjectProperty(ePackage, handleBySchemaLocationMap);
+                    if (jsonObjectProperty != null) {
+                        if (jsonObject == null) {
+                            jsonObject = new JsonObject();
                         }
+                        jsonObject.add(jsonObjectProperty.getKey(), jsonObjectProperty.getElement());
                     }
                 }
             }
@@ -711,6 +708,14 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         }
 
         return jsonObject;
+    }
+
+    private JsonObjectProperty getJsonObjectProperty(EPackage ePackage, Map<String, String> handleBySchemaLocationMap) {
+        Resource resource = ePackage.eResource();
+        if (resource != null) {
+            return this.getJsonObjectFromResource(ePackage, handleBySchemaLocationMap, resource);
+        }
+        return null;
     }
 
     /**
