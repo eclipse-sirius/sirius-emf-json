@@ -10,12 +10,17 @@
  *******************************************************************************/
 package org.eclipse.sirius.emfjson.tests.internal.unit.load;
 
+import java.util.function.Predicate;
+
+import org.eclipse.emf.ecore.EDataType;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.sirius.emfjson.resource.JsonResource;
 import org.eclipse.sirius.emfjson.tests.internal.AbstractEMFJsonTests;
 import org.eclipse.sirius.emfjson.utils.JsonHelper;
 import org.junit.Test;
+
+import model.TestPojoDataTypeImpl;
 
 /**
  * Tests loading with ExtendedMetaData.
@@ -42,13 +47,21 @@ public class JsonHelperDataLoadTests extends AbstractEMFJsonTests {
             public void setValue(EObject object, EStructuralFeature feature, Object value) {
                 Object newValue = value;
                 if ("NodeSingleValueAttribute".equals(feature.getEContainingClass().getName()) && "singleIntAttribute".equals(feature.getName())) { //$NON-NLS-1$ //$NON-NLS-2$
-                    newValue = new Integer(((String) value).length());
+                    newValue = Integer.valueOf(((String) value).length());
                 }
                 super.setValue(object, feature, newValue);
             }
         };
-
         this.options.put(JsonResource.OPTION_CUSTOM_HELPER, jsonHelper);
+
+        Predicate<EDataType> eDataTypeJsonSerializableTester = new Predicate<EDataType>() {
+            @Override
+            public boolean test(EDataType eDataType) {
+                return eDataType.getInstanceClass() == TestPojoDataTypeImpl.class;
+            }
+        };
+        this.options.put(JsonResource.OPTION_SHOULD_EDATATYPE_BE_SERIALIZED_IN_JSON_PREDICATE, eDataTypeJsonSerializableTester);
+
         this.testLoad("TestChangeAttributeTypeMono.xmi"); //$NON-NLS-1$
     }
 
@@ -62,7 +75,7 @@ public class JsonHelperDataLoadTests extends AbstractEMFJsonTests {
             public void setValue(EObject object, EStructuralFeature feature, Object value) {
                 Object newValue = value;
                 if ("NodeMultiValuedAttribute".equals(feature.getEContainingClass().getName()) && "multiIntAttribute".equals(feature.getName())) { //$NON-NLS-1$ //$NON-NLS-2$
-                    newValue = new Integer(((String) value).length());
+                    newValue = Integer.valueOf(((String) value).length());
                 }
                 super.setValue(object, feature, newValue);
             }
