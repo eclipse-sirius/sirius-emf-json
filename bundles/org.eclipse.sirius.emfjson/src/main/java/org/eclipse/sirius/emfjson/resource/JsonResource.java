@@ -22,6 +22,7 @@ import java.util.Map;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.resource.Resource;
 
@@ -426,6 +427,75 @@ public interface JsonResource extends Resource {
     Object OPTION_SAVE_FEATURES_ORDER_COMPARATOR = "OPTION_SAVE_FEATURES_ORDER_COMPARATOR"; //$NON-NLS-1$
 
     /**
+     * An option to provide an ISerializationListener.
+     */
+    String OPTION_SERIALIZATION_LISTENER = "OPTION_SERIALIZATION_LISTENER"; //$NON-NLS-1$
+
+    /**
+     * Used to listen to various events during the serialization.
+     *
+     * @author <a href="mailto:stephane.begaudeau@obeo.fr">Stephane Begaudeau</a>
+     */
+    interface ISerializationListener {
+
+        /**
+         * Called when an entry is added to the namespace header.
+         *
+         * @param nsPrefix
+         *            The prefix of the ePackage added
+         * @param nsURI
+         *            The URI of the ePackage added
+         */
+        void onNsHeaderEntryAdded(String nsPrefix, String nsURI);
+
+        /**
+         * Called when an object is serialized.
+         *
+         * @param eObject
+         *            The EObject serialized
+         * @param jsonElement
+         *            The serialization of the EObject
+         */
+        void onObjectSerialized(EObject eObject, JsonElement jsonElement);
+
+        /**
+         * Called when a proxy to an object located in another resource has been created.
+         *
+         * @param eObject
+         *            The object for which the URI is created
+         * @param eReference
+         *            The reference containing the object
+         * @param uri
+         *            The uri created
+         */
+        void onCrossReferenceURICreated(EObject eObject, EReference eReference, String uri);
+
+        /**
+         * Implementation of the listener which does nothing.
+         *
+         * @author <a href="mailto:stephane.begaudeau@obeo.fr">Stephane Begaudeau</a>
+         */
+        class NoOp implements ISerializationListener {
+
+            @Override
+            public void onNsHeaderEntryAdded(String nsPrefix, String nsURI) {
+                // Do nothing
+            }
+
+            @Override
+            public void onObjectSerialized(EObject eObject, JsonElement jsonElement) {
+                // Do nothing
+            }
+
+            @Override
+            public void onCrossReferenceURICreated(EObject eObject, EReference eReference, String uri) {
+                // Do nothing
+            }
+
+        }
+    }
+
+    /**
      * Associate an ID to the {@link EObject}.
      *
      * @param eObject
@@ -434,4 +504,5 @@ public interface JsonResource extends Resource {
      *            the id
      */
     void setID(EObject eObject, String id);
+
 }

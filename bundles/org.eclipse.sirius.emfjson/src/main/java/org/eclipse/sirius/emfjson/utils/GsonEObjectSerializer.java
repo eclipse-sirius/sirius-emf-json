@@ -65,6 +65,7 @@ import org.eclipse.sirius.emfjson.resource.IDManager;
 import org.eclipse.sirius.emfjson.resource.JsonResource;
 import org.eclipse.sirius.emfjson.resource.JsonResource.EStructuralFeaturesFilter;
 import org.eclipse.sirius.emfjson.resource.JsonResource.IEObjectHandler;
+import org.eclipse.sirius.emfjson.resource.JsonResource.ISerializationListener;
 import org.eclipse.sirius.emfjson.resource.JsonResource.ResourceEntityHandler;
 import org.eclipse.sirius.emfjson.resource.exception.DanglingHREFException;
 
@@ -127,6 +128,8 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      */
     private IEObjectHandler eObjectHandler;
 
+    private ISerializationListener serializationListener;
+
     /**
      * The constructor.
      *
@@ -166,7 +169,11 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
             this.helper.setExtendedMetaData(this.extendedMetaData);
         }
 
-        this.eObjectHandler = (JsonResource.IEObjectHandler) serializedOptions.get(JsonResource.OPTION_EOBJECT_HANDLER);
+        this.eObjectHandler = (IEObjectHandler) serializedOptions.get(JsonResource.OPTION_EOBJECT_HANDLER);
+        this.serializationListener = (ISerializationListener) serializedOptions.get(JsonResource.OPTION_SERIALIZATION_LISTENER);
+        if (this.serializationListener == null) {
+            this.serializationListener = new ISerializationListener.NoOp();
+        }
 
         this.declareSchemaLocation = Boolean.TRUE.equals(options.get(JsonResource.OPTION_SCHEMA_LOCATION));
 
@@ -235,6 +242,8 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         if (this.eObjectHandler != null) {
             this.eObjectHandler.processSerializedContent(jsonElement, eObject);
         }
+
+        this.serializationListener.onObjectSerialized(eObject, jsonElement);
 
         return jsonElement;
     }
@@ -835,6 +844,7 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                     List<String> nsPrefixes = this.helper.getPrefixes(ePackage);
                     for (String nsPrefix : nsPrefixes) {
                         jsonObject.add(nsPrefix, new JsonPrimitive(nsURI));
+                        this.serializationListener.onNsHeaderEntryAdded(nsPrefix, nsURI);
                     }
                 }
             }
@@ -1381,7 +1391,7 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                 break;
             case CROSS_DOC:
                 if (value != null) {
-                    jsonArray.add(new JsonPrimitive(this.saveHref(value, null)));
+                    jsonArray.add(new JsonPrimitive(this.saveHref(value, eReference)));
                 }
                 break;
             default:
@@ -1495,6 +1505,7 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
             // TODO: element Handler if statement : look at XMLSaveImpl line 2308
             value += href;
         }
+        this.serializationListener.onCrossReferenceURICreated(object, eReference, value);
         return value;
     }
 
@@ -1540,8 +1551,8 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
     }
 
     /**
-     * Return the the URI fragment if the pointed resource URI schema is the same of the Resource URI schema. Return the
-     * all URI otherwise.
+     * Return the URI fragment if the pointed resource URI schema is the same of the Resource URI schema. Return the all
+     * URI otherwise.
      *
      * @param pointedResourceUri
      *            the pointed resource URI

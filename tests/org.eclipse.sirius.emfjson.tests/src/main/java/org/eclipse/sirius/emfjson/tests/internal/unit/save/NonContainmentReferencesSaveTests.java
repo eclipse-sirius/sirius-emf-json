@@ -70,6 +70,8 @@ public class NonContainmentReferencesSaveTests extends AbstractEMFJsonTests {
     @Test
     public void testSaveSingleValuedEReference() {
         this.testSave("NodeSingleValueEReference.xmi"); //$NON-NLS-1$
+
+        Assert.assertEquals(this.listenerData.get("onNsHeaderEntryAdded"), "nodes - http://www.obeo.fr/EMFJson"); //$NON-NLS-1$ //$NON-NLS-2$
     }
 
     /**
@@ -105,6 +107,8 @@ public class NonContainmentReferencesSaveTests extends AbstractEMFJsonTests {
     @Test
     public void testSaveLibraryWithBookReferencingLibraries() {
         this.testSave("TestLibraryWithBookReferencingLibraries.xmi"); //$NON-NLS-1$
+
+        Assert.assertEquals(this.listenerData.get("onNsHeaderEntryAdded"), "extlib - http:///org/eclipse/emf/examples/library/extlibrary.ecore/1.0.0"); //$NON-NLS-1$//$NON-NLS-2$
     }
 
     /**
@@ -123,6 +127,8 @@ public class NonContainmentReferencesSaveTests extends AbstractEMFJsonTests {
     @Test
     public void testSaveLibraryWithExternalBookReferencingLibraries() {
         this.testSave("TestLibraryWithExternalBookReferencingLibraries_Book.xmi"); //$NON-NLS-1$
+
+        Assert.assertEquals(this.listenerData.get("onCrossReferenceURICreated"), "TestLibraryWithExternalBookReferencingLibraries_Library.xmi#/0/@branches.0"); //$NON-NLS-1$//$NON-NLS-2$
     }
 
     /**
@@ -140,6 +146,8 @@ public class NonContainmentReferencesSaveTests extends AbstractEMFJsonTests {
     @Test
     public void testSaveExternalMultiNonContainmentReferences() {
         this.testSave("TestExternalMultiNonContainmentReferences.ecore"); //$NON-NLS-1$
+
+        Assert.assertEquals(this.listenerData.get("onCrossReferenceURICreated"), "../../../nodes.ecore#//NodeMultipleCustomDataType"); //$NON-NLS-1$//$NON-NLS-2$
     }
 
     /**
