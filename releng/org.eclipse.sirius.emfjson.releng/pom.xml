@@ -20,7 +20,7 @@
 
   <groupId>org.eclipse.sirius.emfjson</groupId>
   <artifactId>org.eclipse.sirius.emfjson.releng</artifactId>
-  <version>2.3.6-SNAPSHOT</version>
+  <version>2.3.7-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Sirius EMF JSON</name>
