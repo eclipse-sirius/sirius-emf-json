@@ -34,6 +34,7 @@ import java.util.Set;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -68,6 +69,11 @@ public abstract class AbstractEMFJsonTests {
     protected Map<Object, Object> options = new HashMap<Object, Object>();
 
     /**
+     * Data saved by the serialization listener.
+     */
+    protected Map<String, Object> listenerData = new HashMap<String, Object>();
+
+    /**
      * Returns the path of the folder containing the models used during the tests of this class.
      *
      * @return A path within this bundle
@@ -82,6 +88,8 @@ public abstract class AbstractEMFJsonTests {
      *            The name of the resource to save
      */
     protected void testSave(String resourceName) {
+        this.listenerData.clear();
+
         Resource modelResource = this.getModelResource(resourceName, true);
 
         ResourceSet resourceSet = new ResourceSetImpl();
@@ -103,6 +111,20 @@ public abstract class AbstractEMFJsonTests {
             this.options.put(JsonResource.OPTION_ENCODING, JsonResource.ENCODING_UTF_8);
             this.options.put(JsonResource.OPTION_PRETTY_PRINTING_INDENT, JsonResource.INDENT_2_SPACES);
             this.options.put(JsonResource.OPTION_SCHEMA_LOCATION, Boolean.TRUE);
+
+            JsonResource.ISerializationListener serializationListener = new JsonResource.ISerializationListener.NoOp() {
+                @Override
+                public void onNsHeaderEntryAdded(String nsPrefix, String nsURI) {
+                    AbstractEMFJsonTests.this.listenerData.put("onNsHeaderEntryAdded", nsPrefix + " - " + nsURI); //$NON-NLS-1$//$NON-NLS-2$
+                }
+
+                @Override
+                public void onCrossReferenceURICreated(EObject eObject, EReference eReference, String uri) {
+                    AbstractEMFJsonTests.this.listenerData.put("onCrossReferenceURICreated", uri); //$NON-NLS-1$
+                }
+            };
+
+            this.options.put(JsonResource.OPTION_SERIALIZATION_LISTENER, serializationListener);
 
             resource.save(outputStream, this.options);
 
