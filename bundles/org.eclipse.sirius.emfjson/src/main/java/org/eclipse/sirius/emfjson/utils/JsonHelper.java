@@ -40,6 +40,7 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.util.ExtendedMetaData;
 import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.sirius.emfjson.resource.JsonResource;
+import org.eclipse.sirius.emfjson.resource.JsonResource.IJsonResourceProcessor;
 import org.eclipse.sirius.emfjson.resource.JsonResource.URIHandler;
 import org.eclipse.sirius.emfjson.resource.exception.DanglingHREFException;
 
@@ -58,7 +59,7 @@ public class JsonHelper {
     /**
      * This class is used to register uri and all prefixes that refers to this uri.
      */
-    private class PrefixToURI extends BasicEMap<String, String> {
+    private final class PrefixToURI extends BasicEMap<String, String> {
 
         /**
          * .
@@ -180,6 +181,11 @@ public class JsonHelper {
     private DanglingHREFException danglingHREFException;
 
     /**
+     * IJsonResourceProcessor.
+     */
+    private IJsonResourceProcessor jsonResourceProcessor;
+
+    /**
      * How manage dangling references.
      *
      * @see JsonResource#OPTION_PROCESS_DANGLING_HREF
@@ -216,6 +222,15 @@ public class JsonHelper {
      */
     public Resource getResource() {
         return this.resource;
+    }
+
+    /**
+     * Set the jsonResourceProcessor.
+     *
+     * @param jsonResourceProcessor
+     */
+    public void setJsonResourceProcessor(IJsonResourceProcessor jsonResourceProcessor) {
+        this.jsonResourceProcessor = jsonResourceProcessor;
     }
 
     /**
@@ -593,12 +608,16 @@ public class JsonHelper {
      *            the value to set
      */
     public void setValue(EObject object, EStructuralFeature feature, Object value) {
+        Object newValue = this.jsonResourceProcessor.getValue(object, feature, value);
+        if (newValue == null) {
+            newValue = value;
+        }
         if (feature.isMany()) {
             @SuppressWarnings("unchecked")
             Collection<Object> collection = (Collection<Object>) object.eGet(feature);
-            collection.add(value);
+            collection.add(newValue);
         } else {
-            object.eSet(feature, value);
+            object.eSet(feature, newValue);
         }
     }
 

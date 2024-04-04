@@ -54,6 +54,7 @@ import org.eclipse.emf.ecore.util.ExtendedMetaData;
 import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.sirius.emfjson.resource.JsonResource;
 import org.eclipse.sirius.emfjson.resource.JsonResource.IEObjectHandler;
+import org.eclipse.sirius.emfjson.resource.JsonResource.IJsonResourceProcessor;
 import org.eclipse.sirius.emfjson.resource.JsonResource.URIHandler;
 import org.eclipse.sirius.emfjson.resource.PackageNotFoundException;
 
@@ -134,6 +135,8 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
      */
     private IEObjectHandler eObjectHandler;
 
+    private IJsonResourceProcessor jsonResourceProcessor;
+
     /**
      * The constructor.
      *
@@ -150,9 +153,15 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
             this.options = options;
         }
 
+        this.jsonResourceProcessor = (IJsonResourceProcessor) this.options.get(JsonResource.OPTION_JSON_RESSOURCE_PROCESSOR);
+        if (this.jsonResourceProcessor == null) {
+            this.jsonResourceProcessor = new IJsonResourceProcessor.NoOp();
+        }
+
         this.helper = (JsonHelper) this.options.get(JsonResource.OPTION_CUSTOM_HELPER);
         if (this.helper == null) {
             this.helper = new JsonHelper(resource);
+            this.helper.setJsonResourceProcessor(this.jsonResourceProcessor);
         }
         if (resource instanceof JsonResource) {
             this.resource = (JsonResource) resource;
@@ -175,6 +184,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
         } else {
             this.extendedMetaData = (ExtendedMetaData) this.options.get(JsonResource.OPTION_EXTENDED_META_DATA);
         }
+
         if (this.extendedMetaData != null) {
             this.helper.setExtendedMetaData(this.extendedMetaData);
         }
@@ -244,6 +254,8 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                 }
             }
         }
+
+        this.jsonResourceProcessor.preDeserialization(this.resource, jsonRoot);
 
         // json content
         this.deserializeContent(jsonRoot);
@@ -401,7 +413,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                 this.resource.setID(eObject, idJsonElement.getAsString());
             }
         }
-
+        this.jsonResourceProcessor.postObjectLoading(eObject, object, isTopObject);
         return eObject;
     }
 
