@@ -13,6 +13,7 @@
 package org.eclipse.sirius.emfjson.resource;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -489,6 +490,97 @@ public interface JsonResource extends Resource {
 
             @Override
             public void onCrossReferenceURICreated(EObject eObject, EReference eReference, String uri) {
+                // Do nothing
+            }
+
+        }
+    }
+
+    /**
+     * An option to provide an IJsonResourceProcessor.
+     */
+    String OPTION_JSON_RESSOURCE_PROCESSOR = "OPTION_JSON_RESSOURCE_PROCESSOR"; //$NON-NLS-1$
+
+    /**
+     * Used to add data to be serialized in the document, or to retrieve data during deserialization.
+     *
+     * @author <a href="mailto:michael.charfadi@obeo.fr">Michael Charfadi</a>
+     */
+    interface IJsonResourceProcessor {
+
+        /**
+         * Called when a JsonResource is deserialized.
+         *
+         * @param resource
+         *            The JsonResource that is deserialized
+         * @param jsonObject
+         *            The root jsonObject
+         */
+        void preDeserialization(JsonResource resource, JsonObject jsonObject);
+
+        /**
+         * Called when a JsonResource is serialized.
+         *
+         * @param resource
+         *            The JsonResource that is serialized
+         * @param jsonObject
+         *            The root jsonObject
+         */
+        void postSerialization(JsonResource resource, JsonObject jsonObject);
+
+        /**
+         * Called during the parsing of JsonResources after loading an eObject. As such the eObject will have all his
+         * features set. The jsonObject is the one that was used to set the features and can be used to retrieve values
+         * of unknown features.
+         *
+         * @param eObject
+         *            the eObject that have been loaded.
+         * @param jsonObject
+         *            the jsonObject used to load the eObject.
+         * @param isTopObject
+         *            if the given JsonObject is a top element.
+         */
+        void postObjectLoading(EObject eObject, JsonObject jsonObject, boolean isTopObject);
+
+        /**
+         * Called during the parsing of JsonResource (at loading time). If a feature value has changed since a previous
+         * version, use this method to return the correct expected value. Return null if it did not change.
+         *
+         * @param eObject
+         *            the object containing the feature.
+         * @param feature
+         *            the feature to set value.
+         * @param value
+         *            the initial serialized value.
+         * @return The new value.
+         */
+        Object getValue(EObject eObject, EStructuralFeature feature, Object value);
+
+        /**
+         * Implementation of the interface which does nothing.
+         *
+         * @author <a href="mailto:michael.charfadi@obeo.fr">Michael Charfadi</a>
+         */
+        class NoOp implements IJsonResourceProcessor {
+
+            @Override
+            public void preDeserialization(JsonResource resource, JsonObject jsonObject) {
+                // Do nothing
+            }
+
+            @Override
+            public void postSerialization(JsonResource resource, JsonObject jsonObject) {
+                // Do nothing
+            }
+
+            @Override
+            public Object getValue(EObject eObject, EStructuralFeature feature, Object value) {
+                // Do nothing
+                return null;
+            }
+
+            @Override
+            public void postObjectLoading(EObject eObject, JsonObject jsonObject, boolean isTopObject) {
                 // Do nothing
             }
 

@@ -65,6 +65,7 @@ import org.eclipse.sirius.emfjson.resource.IDManager;
 import org.eclipse.sirius.emfjson.resource.JsonResource;
 import org.eclipse.sirius.emfjson.resource.JsonResource.EStructuralFeaturesFilter;
 import org.eclipse.sirius.emfjson.resource.JsonResource.IEObjectHandler;
+import org.eclipse.sirius.emfjson.resource.JsonResource.IJsonResourceProcessor;
 import org.eclipse.sirius.emfjson.resource.JsonResource.ISerializationListener;
 import org.eclipse.sirius.emfjson.resource.JsonResource.ResourceEntityHandler;
 import org.eclipse.sirius.emfjson.resource.exception.DanglingHREFException;
@@ -130,6 +131,10 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
 
     private ISerializationListener serializationListener;
 
+    private IJsonResourceProcessor jsonResourceProcessor;
+
+    private Resource eResource;
+
     /**
      * The constructor.
      *
@@ -141,7 +146,7 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
     public GsonEObjectSerializer(Resource resource, Map<?, ?> options) {
         super();
         Map<?, ?> serializedOptions = options;
-
+        this.eResource = resource;
         this.resourceEntityHandler = (ResourceEntityHandler) serializedOptions.get(JsonResource.OPTION_RESOURCE_ENTITY_HANDLER);
         if (this.resourceEntityHandler instanceof JsonResource.URIHandler && !serializedOptions.containsKey(JsonResource.OPTION_URI_HANDLER)) {
             Map<Object, Object> newOptions = new LinkedHashMap<Object, Object>(serializedOptions);
@@ -174,6 +179,10 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         if (this.serializationListener == null) {
             this.serializationListener = new ISerializationListener.NoOp();
         }
+        this.jsonResourceProcessor = (IJsonResourceProcessor) serializedOptions.get(JsonResource.OPTION_JSON_RESSOURCE_PROCESSOR);
+        if (this.jsonResourceProcessor == null) {
+            this.jsonResourceProcessor = new IJsonResourceProcessor.NoOp();
+        }
 
         this.declareSchemaLocation = Boolean.TRUE.equals(options.get(JsonResource.OPTION_SCHEMA_LOCATION));
 
@@ -202,6 +211,9 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         JsonObject jsonObject = new JsonObject();
         jsonObject.add(IGsonConstants.JSON, jsonHeader);
         jsonObject.add(IGsonConstants.NS, nsHeader);
+
+        this.jsonResourceProcessor.postSerialization((JsonResource) this.eResource, jsonObject);
+
         if (schemaLocationHeader != null) {
             jsonObject.add(IGsonConstants.SCHEMA_LOCATION, schemaLocationHeader);
         }
