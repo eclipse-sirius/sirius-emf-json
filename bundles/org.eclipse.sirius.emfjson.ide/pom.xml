@@ -18,13 +18,13 @@
 	<parent>
 		<groupId>org.eclipse.sirius.emfjson</groupId>
 		<artifactId>org.eclipse.sirius.emfjson.releng</artifactId>
-		<version>2.3.7-SNAPSHOT</version>
+		<version>2.3.8-SNAPSHOT</version>
 		<relativePath>../../releng/org.eclipse.sirius.emfjson.releng</relativePath>
 	</parent>
 	
 	
 	<artifactId>org.eclipse.sirius.emfjson.ide</artifactId>
-	<version>2.3.7-SNAPSHOT</version>
+	<version>2.3.8-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 	
 	<name>Sirius EMF JSON - IDE Integration</name>
