@@ -58,7 +58,7 @@ import org.eclipse.sirius.emfjson.resource.JsonResource;
 import org.eclipse.sirius.emfjson.resource.JsonResource.IEObjectHandler;
 import org.eclipse.sirius.emfjson.resource.JsonResource.IJsonResourceProcessor;
 import org.eclipse.sirius.emfjson.resource.JsonResource.URIHandler;
-import org.eclipse.sirius.emfjson.resource.PackageNotFoundException;
+import org.eclipse.sirius.emfjson.resource.PackageNotFoundError;
 
 /**
  * The Gson deserializer is responsible for the deserialization of EObjects.
@@ -795,7 +795,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
         }
 
         if (ePackage == null) {
-            this.helper.getResource().getErrors().add(new PackageNotFoundException(uriString, this.helper.getResourceURI().toString()));
+            this.helper.getResource().getErrors().add(new PackageNotFoundError(uriString, this.helper.getResourceURI().toString()));
         }
 
         return ePackage;
