@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Obeo.
+ * Copyright (c) 2020, 2024 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -12,22 +12,26 @@
  *******************************************************************************/
 package org.eclipse.sirius.emfjson.resource;
 
+import java.util.Objects;
+
+import org.eclipse.emf.ecore.resource.Resource;
+
 /**
  * This exception is throw when a package is not found.
  *
  * @author <a href="mailto:guillaume.coutable@obeo.fr">Guillaume Coutable</a>
  */
-public class PackageNotFoundException extends JsonException {
-
-    /**
-     * .
-     */
-    private static final long serialVersionUID = 1L;
+public class PackageNotFoundError implements Resource.Diagnostic {
 
     /**
      * The uri that correspond to the missing package.
      */
     protected final String uri;
+
+    /**
+     * The source location of the issue.
+     */
+    private final String location;
 
     /**
      * The constructor.
@@ -37,9 +41,29 @@ public class PackageNotFoundException extends JsonException {
      * @param location
      *            the location
      */
-    public PackageNotFoundException(String uri, String location) {
-        super("Package with uri '" + uri + "' not found.", location); //$NON-NLS-1$//$NON-NLS-2$
-        this.uri = uri;
+    public PackageNotFoundError(String uri, String location) {
+        this.uri = Objects.requireNonNull(uri);
+        this.location = Objects.requireNonNull(location);
+    }
+
+    @Override
+    public String getMessage() {
+        return String.format("Package with uri '%s' not found.", this.uri); //$NON-NLS-1$
+    }
+
+    @Override
+    public String getLocation() {
+        return this.location;
+    }
+
+    @Override
+    public int getColumn() {
+        return 0;
+    }
+
+    @Override
+    public int getLine() {
+        return 0;
     }
 
     /**
