@@ -139,6 +139,8 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
 
     private IJsonResourceProcessor jsonResourceProcessor;
 
+    private final Map<String, EClass> typeCache = new HashMap<>();
+
     /**
      * The constructor.
      *
@@ -579,32 +581,13 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
         EObject proxyEObject = null;
 
         URI toResolveURI = URI.createURI(id);
+
         if (qualifiedType != null) {
-            String[] splitType = qualifiedType.split(":"); //$NON-NLS-1$
-            if (splitType.length == 2) {
-                String packageName = splitType[0];
-                String eClassName = splitType[1];
-                // @formatter:off
-                Optional<EPackage> packageOpt = this.resourceSet.getPackageRegistry().values().stream()
-                        .filter(EPackage.class::isInstance)
-                        .map(EPackage.class::cast)
-                        .filter(pkg-> pkg.getName().equals(packageName))
-                        .findFirst();
-                if (packageOpt.isPresent()) {
-                    Optional<EObject> eObject = packageOpt.get().getEClassifiers().stream()
-                        .filter(clazz-> eClassName.equals(clazz.getName()))
-                        .filter(EClass.class::isInstance)
-                        .map(EClass.class::cast)
-                        .map(eClass -> eClass.getEPackage().getEFactoryInstance().create(eClass))
-                        .findFirst();
-                    if (eObject.isPresent()) {
-                        proxyEObject = eObject.get();
-                        URI resolvedURI = toResolveURI;
-                            resolvedURI = toResolveURI.resolve(this.resourceURI);
-                        ((InternalEObject) proxyEObject).eSetProxyURI(resolvedURI);
-                    }
-                // @formatter:on
-                }
+            EClass eType = this.typeCache.computeIfAbsent(qualifiedType, this::resolveType);
+            if (eType != null) {
+                proxyEObject = eType.getEPackage().getEFactoryInstance().create(eType);
+                URI resolvedURI = toResolveURI.resolve(this.resourceURI);
+                ((InternalEObject) proxyEObject).eSetProxyURI(resolvedURI);
             }
         } else {
             EClass eType = eReference.getEReferenceType();
@@ -617,6 +600,40 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
             }
         }
         return proxyEObject;
+    }
+
+    /**
+     * Resolves a type from a qualified name (e.g. "flow:System") into the corresponding EClass (or null) using the
+     * resource set's package registry.
+     * 
+     * @param qualifiedType
+     *            the qualified name of the type to resolve.
+     * @return the corresponding EClass, or null.
+     */
+    private EClass resolveType(String qualifiedType) {
+        if (qualifiedType != null) {
+            String[] splitType = qualifiedType.split(":"); //$NON-NLS-1$
+            if (splitType.length == 2) {
+                String packageName = splitType[0];
+                String eClassName = splitType[1];
+                Optional<EPackage> packageOpt = this.resourceSet.getPackageRegistry().values().stream()
+                        .filter(EPackage.class::isInstance)
+                        .map(EPackage.class::cast)
+                        .filter(pkg -> pkg.getName().equals(packageName))
+                        .findFirst();
+                if (packageOpt.isPresent()) {
+                    Optional<EClass> eClass = packageOpt.get().getEClassifiers().stream()
+                            .filter(clazz -> eClassName.equals(clazz.getName()))
+                            .filter(EClass.class::isInstance)
+                            .map(EClass.class::cast)
+                            .findFirst();
+                    if (eClass.isPresent()) {
+                        return eClass.get();
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**
