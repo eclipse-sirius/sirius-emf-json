@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Obeo.
+ * Copyright (c) 2020, 2024 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -57,7 +57,7 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
     /**
      * The options.
      */
-    private Map<Object, Object> resourceOptions = new HashMap<Object, Object>();
+    private Map<Object, Object> resourceOptions = new HashMap<>();
 
     /**
      * Use to know is an id is used to identified an EObject.
@@ -111,7 +111,7 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
      * @return the json representation of the given Resource
      */
     public static String toJson(Resource resource, Map<Object, Object> options) {
-        Map<Object, Object> loadOptions = new HashMap<Object, Object>();
+        Map<Object, Object> loadOptions = new HashMap<>();
         if (options != null) {
             loadOptions.putAll(options);
         }
@@ -444,12 +444,8 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
     @Override
     protected EObject getEObjectByID(String id) {
         if (this.useID) {
-            EObject eObject = this.idToEObjectMap.get(id);
-            if (eObject != null) {
-                return eObject;
-            }
+            return this.idToEObjectMap.get(id);
         }
-
         return super.getEObjectByID(id);
     }
 
