@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2023 Obeo.
+ * Copyright (c) 2020, 2024 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,22 +78,6 @@ import org.eclipse.sirius.emfjson.resource.exception.DanglingHREFException;
  * @author <a href="mailto:stephane.begaudeau@obeo.fr">Stephane Begaudeau</a>
  */
 public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
-
-    /**
-     * In case of serialize non containment references, where the reference is not found.
-     */
-    private static final int SKIP = 0;
-
-    /**
-     * In case of serialize non containment references, where the reference is in the same document.
-     */
-    private static final int SAME_DOC = 1;
-
-    /**
-     * In case of serialize non containment references, where the reference is in an other document.
-     */
-    private static final int CROSS_DOC = 2;
-
     /**
      * Hexadecimal digits.
      */
@@ -1415,63 +1398,12 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      */
     @SuppressWarnings("unchecked")
     private JsonElement serializeMultipleNonContainmentEReference(EObject eObject, EReference eReference) {
-        JsonElement jsonElement = null;
         JsonArray jsonArray = new JsonArray();
         Object referenceValue = this.helper.getValue(eObject, eReference);
         for (EObject value : (InternalEList<? extends EObject>) referenceValue) {
-            switch (this.docKindMany(eObject, eReference)) {
-            case SAME_DOC:
-                String id = this.helper.getIDREF(value);
-                id = this.removeFragmentSeparator(id);
-                if (!id.isEmpty()) {
-                    jsonArray.add(new JsonPrimitive(id));
-                }
-                break;
-            case CROSS_DOC:
-                if (value != null) {
-                    jsonArray.add(new JsonPrimitive(this.saveHref(value, eReference)));
-                }
-                break;
-            default:
-            }
+            jsonArray.add(this.serializeReferenceValue(eObject, eReference, value));
         }
-
-        jsonElement = jsonArray;
-        return jsonElement;
-    }
-
-    /**
-     * Return where given ERference of the given EObject are. If at least one reference is in an other resource, all
-     * references are treated as references to other resources.
-     *
-     * @param eObject
-     *            the given EObject
-     * @param eReference
-     *            the given ERference
-     * @return where given ERference of the given EObject are
-     */
-    private int docKindMany(EObject eObject, EReference eReference) {
-        int referenceType = GsonEObjectSerializer.SAME_DOC;
-        @SuppressWarnings("unchecked")
-        InternalEList<? extends InternalEObject> internalEList = (InternalEList<? extends InternalEObject>) this.helper.getValue(eObject, eReference);
-
-        if (internalEList.isEmpty()) {
-            referenceType = GsonEObjectSerializer.SKIP;
-        }
-
-        Iterator<? extends InternalEObject> it = internalEList.iterator();
-        while (referenceType != GsonEObjectSerializer.SKIP && referenceType != GsonEObjectSerializer.CROSS_DOC && it.hasNext()) {
-            InternalEObject internalEObject = it.next();
-            if (internalEObject.eIsProxy()) {
-                referenceType = GsonEObjectSerializer.CROSS_DOC;
-            } else {
-                Resource resource = internalEObject.eResource();
-                if (resource != this.helper.getResource() && resource != null) {
-                    referenceType = GsonEObjectSerializer.CROSS_DOC;
-                }
-            }
-        }
-        return referenceType;
+        return jsonArray;
     }
 
     /**
@@ -1484,27 +1416,23 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      * @return A JsonObject with the property IGsonConstants.REF and as the value, the URI of the object.
      */
     private JsonElement serializeSingleNonContainmentEReference(EObject eObject, EReference eReference) {
-        JsonElement jsonElement = null;
-        String value = ""; //$NON-NLS-1$
-        Object referenceValue = this.helper.getValue(eObject, eReference);
-        switch (this.docKindSingle(eObject, eReference)) {
-        case SAME_DOC:
-            // same document
-            value = this.helper.getIDREF((EObject) referenceValue);
-            value = this.removeFragmentSeparator(value);
-            break;
-        case CROSS_DOC:
-            // cross document
-            EObject object = (EObject) this.helper.getValue(eObject, eReference);
-            if (object != null) {
-                value = this.saveHref(object, eReference);
-            }
-            break;
-        default:
-        }
-        jsonElement = new JsonPrimitive(value);
+        EObject referenceValue = (EObject) this.helper.getValue(eObject, eReference);
+        return this.serializeReferenceValue(eObject, eReference, referenceValue);
+    }
 
-        return jsonElement;
+    private JsonElement serializeReferenceValue(EObject eObject, EReference eReference, EObject referenceValue) {
+        String value = ""; //$NON-NLS-1$
+        if (this.isFromDifferentResource(referenceValue)) {
+            value = this.saveHref(referenceValue, eReference);
+        } else {
+            value = this.removeFragmentSeparator(this.helper.getIDREF(referenceValue));
+        }
+        return new JsonPrimitive(value);
+    }
+
+    private boolean isFromDifferentResource(EObject referenceValue) {
+        InternalEObject value = (InternalEObject) referenceValue;
+        return value == null || value.eIsProxy() || value.eResource() != this.helper.getResource();
     }
 
     /**
@@ -1561,31 +1489,6 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
             shouldSaveType = Boolean.FALSE;
         }
         return shouldSaveType.booleanValue();
-    }
-
-    /**
-     * Return where the given ERference of the given EObject is.
-     *
-     * @param eObject
-     *            the given EObject
-     * @param eReference
-     *            the given EReference
-     * @return where the given ERference of the given EObject is
-     */
-    private int docKindSingle(EObject eObject, EReference eReference) {
-        InternalEObject value = (InternalEObject) this.helper.getValue(eObject, eReference);
-        int typeOfDocument = GsonEObjectSerializer.SKIP;
-        if (value != null && value.eIsProxy()) {
-            typeOfDocument = GsonEObjectSerializer.CROSS_DOC;
-        } else if (value != null) {
-            Resource res = value.eResource();
-            if (res == this.helper.getResource() || res == null) {
-                typeOfDocument = GsonEObjectSerializer.SAME_DOC;
-            } else {
-                typeOfDocument = GsonEObjectSerializer.CROSS_DOC;
-            }
-        }
-        return typeOfDocument;
     }
 
     /**
