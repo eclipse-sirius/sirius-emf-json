@@ -2,7 +2,7 @@
 <feature
       id="org.eclipse.sirius.emfjson.feature"
       label="%Feature-name"
-      version="2.3.11.qualifier"
+      version="2.3.12.qualifier"
       provider-name="%Feature-vendor">
 
    <description url="">
