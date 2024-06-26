@@ -444,7 +444,11 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
     @Override
     protected EObject getEObjectByID(String id) {
         if (this.useID) {
-            return this.idToEObjectMap.get(id);
+            EObject result = this.idToEObjectMap.get(id);
+            if (result == null && this.intrinsicIDToEObjectMap != null) {
+                result = this.intrinsicIDToEObjectMap.get(id);
+            }
+            return result;
         }
         return super.getEObjectByID(id);
     }
