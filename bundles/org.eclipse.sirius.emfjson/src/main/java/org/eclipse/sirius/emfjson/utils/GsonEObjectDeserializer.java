@@ -67,6 +67,8 @@ import org.eclipse.sirius.emfjson.resource.PackageNotFoundError;
  */
 public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> {
 
+    private static final char SCHEME_SEPARATOR = ':';
+
     /**
      * The JsonHelper.
      */
@@ -540,15 +542,13 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                     this.helper.setValue(eObject, eReference, object);
                 }
             } else {
-                String resourceURIPath = id.substring(0, index); // The URI of the resource where I can find
-                // the EObject
-                EPackage ePackage = this.getPackageForURI(resourceURIPath); // return an EPackage only if the
-                // URI represent an EPackage
-                Resource packageResource = null;
+                String resourceURIPath = id.substring(0, index);
                 EObject object = null;
-                if (ePackage != null) {
-                    packageResource = ePackage.eResource();
-                    object = packageResource.getEObject(fragmentEMF);
+                if (resourceURIPath.indexOf(SCHEME_SEPARATOR) != -1) {
+                    EPackage ePackage = this.getPackageForURI(resourceURIPath);
+                    if (ePackage != null) {
+                        object = ePackage.eResource().getEObject(fragmentEMF);
+                    }
                 } else {
                     object = this.createProxyEObject(id, qualifiedType, eReference);
                 }
@@ -605,7 +605,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     /**
      * Resolves a type from a qualified name (e.g. "flow:System") into the corresponding EClass (or null) using the
      * resource set's package registry.
-     * 
+     *
      * @param qualifiedType
      *            the qualified name of the type to resolve.
      * @return the corresponding EClass, or null.
@@ -701,12 +701,12 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                     }
                 } else {
                     String resourceURIPath = id.substring(0, index);
-                    EPackage ePackage = this.getPackageForURI(resourceURIPath);
-                    Resource packageResource = null;
                     EObject object = null;
-                    if (ePackage != null) {
-                        packageResource = ePackage.eResource();
-                        object = packageResource.getEObject(fragmentEMF);
+                    if (resourceURIPath.indexOf(SCHEME_SEPARATOR) != -1) {
+                        EPackage ePackage = this.getPackageForURI(resourceURIPath);
+                        if (ePackage != null) {
+                            object = ePackage.eResource().getEObject(fragmentEMF);
+                        }
                     } else {
                         object = this.createProxyEObject(id, qualifiedType, eReference);
                     }
