@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Eclipse Sirius - EMF JSON
 Bundle-SymbolicName: org.eclipse.sirius.emfjson
-Bundle-Version: 2.3.12.qualifier
+Bundle-Version: 2.4.0.qualifier
 Bundle-Vendor: Eclipse Modeling Project
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Bundle-Localization: bundle
