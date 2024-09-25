@@ -253,7 +253,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
 
                     EPackage ePackage = this.getEPackage(uri);
                     if (ePackage != null) {
-                        this.resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);
+                        this.packageRegistry.put(ePackage.getNsURI(), ePackage);
                     }
                 }
             }
@@ -605,7 +605,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     /**
      * Resolves a type from a qualified name (e.g. "flow:System") into the corresponding EClass (or null) using the
      * resource set's package registry.
-     * 
+     *
      * @param qualifiedType
      *            the qualified name of the type to resolve.
      * @return the corresponding EClass, or null.
@@ -616,7 +616,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
             if (splitType.length == 2) {
                 String packageName = splitType[0];
                 String eClassName = splitType[1];
-                Optional<EPackage> packageOpt = this.resourceSet.getPackageRegistry().values().stream()
+                Optional<EPackage> packageOpt = this.packageRegistry.values().stream()
                         .filter(EPackage.class::isInstance)
                         .map(EPackage.class::cast)
                         .filter(pkg -> pkg.getName().equals(packageName))
@@ -864,7 +864,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                 JsonObject properties = jsonObject.getAsJsonObject(IGsonConstants.DATA);
                 eReferenceValue = this.loadReferences(EcorePackage.Literals.EPACKAGE, properties);
                 EPackage ePackage = (EPackage) eReferenceValue;
-                this.resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);
+                this.packageRegistry.put(ePackage.getNsURI(), ePackage);
             } else {
                 eReferenceValue = this.loadObject(jsonObject, false);
             }
@@ -1086,10 +1086,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
 
         String nsUri = this.prefixToNsURi.get(nsPrefix);
 
-        EPackage ePackage = null;
-        if (this.resourceSet != null) {
-            ePackage = this.resourceSet.getPackageRegistry().getEPackage(nsUri);
-        }
+        EPackage ePackage = this.packageRegistry.getEPackage(nsUri);
 
         if (ePackage == null) {
             ePackage = this.getPackageForURI(nsUri);
