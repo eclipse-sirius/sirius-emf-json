@@ -11,7 +11,7 @@ The build uses https://maven.apache.org/[Apache Maven] (version 3.9.8). To launc
 
 [source,sh]
 ----
-mvn -f org.eclipse.sirius.emfjson/pom.xml clean package
+mvn clean package
 ----
 
 from the top-level directory.
