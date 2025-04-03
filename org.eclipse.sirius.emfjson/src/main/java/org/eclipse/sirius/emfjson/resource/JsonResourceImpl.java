@@ -64,6 +64,8 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
      */
     private boolean useID;
 
+    private boolean useIDAsURIFragment;
+
     /**
      * The constructor. <br/>
      * If an instance of {@link IDManager} is found in the resourceOptions, the usage of Id is possible. The ID is
@@ -84,6 +86,11 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
             Object idManagerObject = this.resourceOptions.get(JsonResource.OPTION_ID_MANAGER);
             if (idManagerObject instanceof IDManager) {
                 this.useID = true;
+                if (this.resourceOptions.get(JsonResource.OPTION_FORCE_DEFAULT_REFERENCE_SERIALIZATION) instanceof Boolean optionValue && optionValue.booleanValue()) {
+                    this.useIDAsURIFragment = false;
+                } else {
+                    this.useIDAsURIFragment = true;
+                }
             }
         }
     }
@@ -163,7 +170,22 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
 
         return json;
     }
+    
+    @Override
+    public String getURIFragment(EObject eObject) {
+        String id = null;
 
+        if (this.useIDAsURIFragment) {
+            id = this.getID(eObject);
+        }
+
+        if (id != null) {
+            return id;
+        } else {
+            return super.getURIFragment(eObject);
+        }
+    }
+    
     /**
      * Serializes a collection of EObject into its json representation.
      *
@@ -434,6 +456,16 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
                 }
             }
         }
+    }
+    
+    public String getID(EObject eObject) {
+        if (this.useID) {
+            Object managerObject = this.resourceOptions.get(JsonResource.OPTION_ID_MANAGER);
+            if (managerObject instanceof IDManager idManager) {
+                return idManager.findId(eObject).orElse(null);
+            }
+        }
+        return null;
     }
 
     @Override
