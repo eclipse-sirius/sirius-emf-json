@@ -10,7 +10,15 @@ None.
 
 === Breaking changes
 
-None.
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/52[#52] The serialization format of inter-object references has changed to use the unique objet IDs by default (if an IDManager is configured and unless `OPTION_FORCE_DEFAULT_REFERENCE_SERIALIZATION` is `true`).
+For example a reference which was serialized as `"type": ""//supackage1/ClassSource_1/subclass.1"` before is now `"type": "6cfebaaa-fb15-41b5-b908-fa474b66b525"`.
+This changes the value returned by `EcoreUtil.getURI(eObject)` for objects inside JsonResource, which now return the object's ID instead of a path.
+For applications which depend on `EcoreUtil.getURI(eObject)` to return a (stable) path instead of a possibly random ID, the new behavior can be disabled by setting the `OPTION_FORCE_DEFAULT_REFERENCE_SERIALIZATION` option:
++
+[source,java]
+----
+var resource = new JsonResourceImpl(uri, Map.of(JsonResource.OPTION_FORCE_DEFAULT_REFERENCE_SERIALIZATION, Boolean.TRUE));
+----
 
 === Dependency update
 
@@ -23,6 +31,9 @@ None.
 === New Features and Improvements
 
 - Add a cache for qualified EClass names to avoid recomputing them many times when saving large resources.
+None.
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/52[#52] Inter-object references now leverage the unique object IDs (instead of hierarchical URI fragments) by default, for *much* better performances, both on save and load.
+The performance improvements are only visible on resources saved using this version; resources saved using older version can still be loaded, but will not benefit from the change (until they are saved again).
 
 == v2.4.1
 
