@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Obeo.
+ * Copyright (c) 2020, 2025 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -66,12 +66,12 @@ public abstract class AbstractEMFJsonTests {
     /**
      * Serializations options.
      */
-    protected Map<Object, Object> options = new HashMap<Object, Object>();
+    protected Map<Object, Object> options = new HashMap<>();
 
     /**
      * Data saved by the serialization listener.
      */
-    protected Map<String, Object> listenerData = new HashMap<String, Object>();
+    protected Map<String, Object> listenerData = new HashMap<>();
 
     /**
      * Returns the path of the folder containing the models used during the tests of this class.
@@ -232,7 +232,7 @@ public abstract class AbstractEMFJsonTests {
     protected Resource getModelResource(String resourceName, boolean loadMetamodel) {
         Resource resource = null;
         if (loadMetamodel) {
-            ArrayList<EPackage> arrayList = new ArrayList<EPackage>();
+            ArrayList<EPackage> arrayList = new ArrayList<>();
             arrayList.add(this.loadMetaModel("/nodes.ecore")); //$NON-NLS-1$
             arrayList.add(this.loadMetaModel("/unit/references/noncontainment/extlibrary.ecore")); //$NON-NLS-1$
             if (!arrayList.isEmpty()) {
@@ -326,7 +326,7 @@ public abstract class AbstractEMFJsonTests {
      *
      * @author <a href="mailto:guillaume.coutable@obeo.fr">Guillaume Coutable</a>
      */
-    private static class ExtendedEqualityHelper extends EcoreUtil.EqualityHelper {
+    private static final class ExtendedEqualityHelper extends EcoreUtil.EqualityHelper {
         private static final long serialVersionUID = 1L;
 
         @Override
