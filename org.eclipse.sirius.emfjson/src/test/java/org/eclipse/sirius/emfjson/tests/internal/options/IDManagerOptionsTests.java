@@ -97,12 +97,13 @@ public class IDManagerOptionsTests extends AbstractEMFJsonTests {
         private boolean eClassIDRetrieved;
 
         @Override
-        public void setId(EObject eObject, String id) {
+        public String setId(EObject eObject, String id) {
             if (EcorePackage.eINSTANCE.getEPackage().equals(eObject.eClass())) {
                 this.ePackageIDRetrieved = IDManagerOptionsTests.MY_E_PACKAGE_ID.equals(id);
             } else if (EcorePackage.eINSTANCE.getEClass().equals(eObject.eClass())) {
                 this.eClassIDRetrieved = IDManagerOptionsTests.MY_E_CLASS_ID.equals(id);
             }
+            return null;
         }
 
         @Override
@@ -118,24 +119,14 @@ public class IDManagerOptionsTests extends AbstractEMFJsonTests {
             return id;
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @see org.eclipse.sirius.emfjson.resource.IDManager#findId(org.eclipse.emf.ecore.EObject)
-         */
         @Override
         public Optional<String> findId(EObject eObject) {
             return Optional.ofNullable(this.getOrCreateId(eObject));
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @see org.eclipse.sirius.emfjson.resource.IDManager#clearId(org.eclipse.emf.ecore.EObject)
-         */
         @Override
-        public Optional<String> clearId(EObject eObject) {
-            return Optional.empty();
+        public void clearId(EObject eObject) {
+         // Nothing to do.
         }
 
         /**

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Obeo.
+ * Copyright (c) 2020, 2025 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -120,7 +120,7 @@ public class RemoveObjectTests {
     private JsonResource createJsonResource() {
         ResourceSet resourceSet = new ResourceSetImpl();
         resourceSet.getPackageRegistry().put(this.ePackage.getNsURI(), this.ePackage);
-        Map<String, Object> options = new HashMap<String, Object>();
+        Map<String, Object> options = new HashMap<>();
         options.put(JsonResource.OPTION_ID_MANAGER, new IDManager() {
             @Override
             public String getOrCreateId(EObject eObject) {
@@ -128,8 +128,10 @@ public class RemoveObjectTests {
             }
 
             @Override
-            public void setId(EObject eObject, String id) {
+            public String setId(EObject eObject, String id) {
+                String previousId = EcoreUtil.getID(eObject);
                 EcoreUtil.setID(eObject, id);
+                return previousId;
             }
 
             @Override
@@ -138,8 +140,8 @@ public class RemoveObjectTests {
             }
 
             @Override
-            public Optional<String> clearId(EObject eObject) {
-                return Optional.empty();
+            public void clearId(EObject eObject) {
+                // Nothing to do.
             }
         });
         return new JsonResourceImpl(URI.createURI(""), options); //$NON-NLS-1$

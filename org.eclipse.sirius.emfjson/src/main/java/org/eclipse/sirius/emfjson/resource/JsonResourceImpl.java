@@ -170,7 +170,7 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
 
         return json;
     }
-    
+
     @Override
     public String getURIFragment(EObject eObject) {
         String id = null;
@@ -185,7 +185,7 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
             return super.getURIFragment(eObject);
         }
     }
-    
+
     /**
      * Serializes a collection of EObject into its json representation.
      *
@@ -399,16 +399,19 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
     }
 
     /**
-     * If the usage of ID has been activated, removes the entry from the {@link #idToEObjectMap} thanks
-     * {@link #setID(EObject, String)} with a <code>null</code> value as ID.
+     * If the usage of ID has been activated, removes the entry from the {@link #idToEObjectMap}.
      */
     @Override
     protected void detachedHelper(EObject eObject) {
-        if (this.useID) {
-            this.setID(eObject, null);
-        }
-
+        this.clearId(eObject);
         super.detachedHelper(eObject);
+    }
+
+    private void clearId(EObject eObject) {
+        IDManager idManager = this.getIdManager();
+        if (idManager != null) {
+            idManager.findId(eObject).ifPresent(this.idToEObjectMap::remove);
+        }
     }
 
     /**
@@ -422,12 +425,10 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
     protected void attachedHelper(EObject eObject) {
         super.attachedHelper(eObject);
 
-        if (this.useID) {
-            Object idManagerObject = this.resourceOptions.get(JsonResource.OPTION_ID_MANAGER);
-            if (idManagerObject instanceof IDManager idManager) {
-                String id = idManager.getOrCreateId(eObject);
-                this.setID(eObject, id);
-            }
+        IDManager idManager = this.getIdManager();
+        if (idManager != null) {
+            String id = idManager.getOrCreateId(eObject);
+            this.setID(eObject, id);
         }
     }
 
@@ -446,23 +447,30 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
      */
     @Override
     public void setID(EObject eObject, String id) {
-        if (this.useID) {
-            Object managerObject = this.resourceOptions.get(JsonResource.OPTION_ID_MANAGER);
-            if (managerObject instanceof IDManager idManager) {
-                idManager.findId(eObject).ifPresent(this.idToEObjectMap::remove);
-                if (id != null) {
-                    idManager.setId(eObject, id);
-                    this.idToEObjectMap.put(id, eObject);
-                }
+        IDManager idManager = this.getIdManager();
+        if (idManager != null) {
+            String previousId = idManager.setId(eObject, id);
+            if (previousId != null) {
+                this.idToEObjectMap.remove(previousId);
             }
+            this.idToEObjectMap.put(id, eObject);
         }
     }
-    
+
     public String getID(EObject eObject) {
+        IDManager idManager = this.getIdManager();
+        if (idManager != null) {
+            return idManager.findId(eObject).orElse(null);
+        } else {
+            return null;
+        }
+    }
+
+    private IDManager getIdManager() {
         if (this.useID) {
             Object managerObject = this.resourceOptions.get(JsonResource.OPTION_ID_MANAGER);
             if (managerObject instanceof IDManager idManager) {
-                return idManager.findId(eObject).orElse(null);
+                return idManager;
             }
         }
         return null;
