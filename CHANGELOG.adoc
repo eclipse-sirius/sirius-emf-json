@@ -19,6 +19,9 @@ For applications which depend on `EcoreUtil.getURI(eObject)` to return a (stable
 ----
 var resource = new JsonResourceImpl(uri, Map.of(JsonResource.OPTION_FORCE_DEFAULT_REFERENCE_SERIALIZATION, Boolean.TRUE));
 ----
+- The `org.eclipse.sirius.emfjson.resource.IDManager` interface has changed to allow for better performances:
+** The `clearId(EObject)` method used to expect the previous id of the object to be returned, but the result was not actually used. The method now returns `void` and implementations no longer need to return anything.
+** Symmetrically, the `setId(EObject, String)` method, which used to return `void`, should now return the previous id of the object, or `null` if there was none.
 
 === Dependency update
 

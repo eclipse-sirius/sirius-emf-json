@@ -50,9 +50,8 @@ public interface IDManager {
      *
      * @param eObject
      *            The eObject
-     * @return The cleared ID or {@link Optional#empty()}
      */
-    Optional<String> clearId(EObject eObject);
+    void clearId(EObject eObject);
 
     /**
      * Sets the ID to the {@link EObject}.
@@ -66,6 +65,7 @@ public interface IDManager {
      *            The eObject to associate with the ID
      * @param id
      *            The ID to set in the eObject
+     * @return the previous id that was replaced, if there was one; <code>null</code> otherwise.
      */
-    void setId(EObject eObject, String id);
+    String setId(EObject eObject, String id);
 }
