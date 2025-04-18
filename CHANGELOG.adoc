@@ -22,7 +22,7 @@ None.
 
 === New Features and Improvements
 
-None.
+- Add a cache for qualified EClass names to avoid recomputing them many times when saving large resources.
 
 == v2.4.1
 

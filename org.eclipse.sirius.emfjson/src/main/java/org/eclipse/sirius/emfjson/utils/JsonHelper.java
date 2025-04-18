@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Obeo.
+ * Copyright (c) 2020, 2025 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -76,7 +76,7 @@ public class JsonHelper {
         protected List<String> getPrefixes(String uri) {
             List<String> result = JsonHelper.this.urisToPrefixes.get(uri);
             if (result == null) {
-                result = new ArrayList<String>();
+                result = new ArrayList<>();
                 JsonHelper.this.urisToPrefixes.put(uri, result);
             }
             return result;
@@ -123,7 +123,7 @@ public class JsonHelper {
     /**
      * Mapping between packages and nsPrefix.
      */
-    protected Map<EPackage, String> packages = new HashMap<EPackage, String>();
+    protected Map<EPackage, String> packages = new HashMap<>();
 
     /**
      * Mapping between package prefixes and package URIs.
@@ -133,7 +133,7 @@ public class JsonHelper {
     /**
      * Mapping between package URIs and package prefixes. Avoid URI conflict.
      */
-    protected Map<String, List<String>> urisToPrefixes = new HashMap<String, List<String>>();
+    protected Map<String, List<String>> urisToPrefixes = new HashMap<>();
 
     /**
      * The type that it will be used, when an AnySimpleType will be encountered.
@@ -198,10 +198,16 @@ public class JsonHelper {
     private boolean serializeFragmentReferencesAsXMIResource;
 
     /**
+     * Cache for qualified EClass names.
+     */
+    private final Map<EClass, String> qnameCache;
+
+    /**
      * The constructor.
      */
     public JsonHelper() {
         this.prefixesToURIs = new PrefixToURI();
+        this.qnameCache = new HashMap<>();
     }
 
     /**
@@ -276,7 +282,7 @@ public class JsonHelper {
             int count = 0;
             for (EObject root : rootsEObject) {
                 InternalEObject internalEObject = (InternalEObject) root;
-                List<String> uriFragmentPath = new ArrayList<String>();
+                List<String> uriFragmentPath = new ArrayList<>();
                 boolean stop = false;
                 for (InternalEObject container = internalEObject.eInternalContainer(); container != null && !stop; container = internalEObject.eInternalContainer()) {
                     uriFragmentPath.add(container.eURIFragmentSegment(internalEObject.eContainingFeature(), internalEObject));
@@ -373,8 +379,10 @@ public class JsonHelper {
      * @return NsName:name of an EClass
      */
     public String getQName(EClass eClass) {
-        String name = this.getName(eClass);
-        return this.getQName(eClass.getEPackage(), name);
+        return this.qnameCache.computeIfAbsent(eClass, klass -> {
+            String name = this.getName(klass);
+            return this.getQName(klass.getEPackage(), name);
+        });
     }
 
     /**
@@ -542,7 +550,7 @@ public class JsonHelper {
      * @return EPackage prefixes list
      */
     public List<String> getPrefixes(EPackage ePackage) {
-        List<String> result = new UniqueEList<String>();
+        List<String> result = new UniqueEList<>();
         result.add(this.getPrefix(ePackage));
         String namespace = ePackage.getNsURI();
         if (this.extendedMetaData != null) {
@@ -670,7 +678,7 @@ public class JsonHelper {
      * @return the packages
      */
     public EPackage[] packages() {
-        Map<String, EPackage> map = new TreeMap<String, EPackage>();
+        Map<String, EPackage> map = new TreeMap<>();
 
         // Sort and eliminate duplicates caused by having both a regular package and a demanded package for
         // the same nsURI.
