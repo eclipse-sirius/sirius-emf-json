@@ -1,5 +1,29 @@
 = Changelog
 
+== v2.5.0 (in progress)
+
+This version focuses on performance improvements.
+
+=== Deprecation warning
+
+None.
+
+=== Breaking changes
+
+None.
+
+=== Dependency update
+
+None.
+
+=== Bug fixes
+
+None.
+
+=== New Features and Improvements
+
+None.
+
 == v2.4.1
 
 This version focuses on dependency updates.
