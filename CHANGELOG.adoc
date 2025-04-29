@@ -1,5 +1,34 @@
 = Changelog
 
+
+== v2.5.1 (work in progress)
+
+
+=== Deprecation warning
+
+None.
+
+
+=== Breaking changes
+
+None.
+
+
+=== Dependency update
+
+None.
+
+
+=== Bug fixes
+
+None.
+
+
+=== New Features and Improvements
+
+None.
+
+
 == v2.5.0
 
 This version focuses on performance improvements.
@@ -34,9 +63,9 @@ None.
 === New Features and Improvements
 
 - Add a cache for qualified EClass names to avoid recomputing them many times when saving large resources.
-None.
 - https://github.com/eclipse-sirius/sirius-emf-json/issues/52[#52] Inter-object references now leverage the unique object IDs (instead of hierarchical URI fragments) by default, for *much* better performances, both on save and load.
 The performance improvements are only visible on resources saved using this version; resources saved using older version can still be loaded, but will not benefit from the change (until they are saved again).
+
 
 == v2.4.1
 
