@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 Obeo.
+ * Copyright (c) 2023, 2025 Obeo.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -32,36 +32,36 @@ public class ExtendedMetaDataReferencesLoadTests extends AbstractEMFJsonTests {
      */
     @Override
     protected String getRootPath() {
-        return "/unit/attributes/extendedmetadata/"; //$NON-NLS-1$
+        return "/unit/references/extendedmetadata/"; //$NON-NLS-1$
     }
 
     /**
-     * Change the name of a monovalued EAttribute.
+     * Change the name of a monovalued EReference.
      */
     @Test
-    public void testChangeAttributeNameMono() {
+    public void testChangeReferenceNameMono() {
         ExtendedMetaData metaData = new BasicExtendedMetaData() {
             @Override
             public EStructuralFeature getElement(EClass eClass, String namespace, String name) {
-                if ("NodeSingleValueAttribute".equals(eClass.getName()) && "singleStringAttributeOld".equals(name)) { //$NON-NLS-1$ //$NON-NLS-2$
-                    return eClass.getEStructuralFeature("singleStringAttribute"); //$NON-NLS-1$
+                if ("NodeSingleValueReference".equals(eClass.getName()) && "singleValuedReferenceOld".equals(name)) {
+                    // $NON-NLS-1$ //$NON-NLS-2$
+                    return eClass.getEStructuralFeature("singleValuedReference"); //$NON-NLS-1$
                 }
                 // return super.getElement(eClass, namespace, name); // Doesn't work because the super implementation in
                 // Ecore ends up checking that the string is XMI
                 return eClass.getEStructuralFeature(name);
             }
-
         };
+
         this.options.put(JsonResource.OPTION_EXTENDED_META_DATA, metaData);
-        this.testLoad("TestChangeAttributeNameMono.xmi"); //$NON-NLS-1$
+        this.testLoad("TestChangeReferenceNameMono.xmi"); //$NON-NLS-1$
     }
 
     /**
-     * Change the name of a multivalued EAttribute.
+     * Change the name of a multivalued EReference.
      */
     @Test
-    public void testChangeAttributeNameMulti() {
-        // CHECKSTYLE:OFF
+    public void testChangeReferenceNameMulti() {
         ExtendedMetaData metaData = new BasicExtendedMetaData() {
             @Override
             public EStructuralFeature getElement(EClass eClass, String namespace, String name) {
@@ -72,11 +72,10 @@ public class ExtendedMetaDataReferencesLoadTests extends AbstractEMFJsonTests {
                 // Ecore ends up checking that the string is XMI
                 return eClass.getEStructuralFeature(name);
             }
-
         };
-        // CHECKSTYLE:ON
+
         this.options.put(JsonResource.OPTION_EXTENDED_META_DATA, metaData);
-        this.testLoad("TestChangeAttributeNameMulti.xmi"); //$NON-NLS-1$
+        this.testLoad("TestChangeReferenceNameMulti.xmi"); //$NON-NLS-1$
     }
 
 }

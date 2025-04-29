@@ -26,7 +26,7 @@ None.
 
 === New Features and Improvements
 
-None.
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/64[#64] Add the ability to update non-containment references to change the value of a reference with the URI of an object has been modified
 
 
 == v2.5.0

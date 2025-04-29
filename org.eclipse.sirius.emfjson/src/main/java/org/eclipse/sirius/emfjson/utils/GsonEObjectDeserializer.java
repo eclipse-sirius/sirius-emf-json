@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2022 Obeo.
+ * Copyright (c) 2020, 2025 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -512,8 +512,9 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
      *            the EObject
      */
     private void deserializeSingleNonContainmentEReference(EReference eReference, JsonElement value, EObject eObject) {
-
         String id = this.getAsFlexibleString(value);
+        id = this.jsonResourceProcessor.getEObjectUri(eObject, eReference, id);
+
         String qualifiedType = null;
 
         String[] split = id.split(" "); //$NON-NLS-1$
@@ -673,8 +674,9 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     private void deserializeMultipleNonContainmentEReference(EReference eReference, JsonElement value, EObject eObject) {
         JsonArray array = this.getAsFlexibleArray(value);
         for (int i = 0; i < array.size(); ++i) {
-
             String id = array.get(i).getAsString();
+            id = this.jsonResourceProcessor.getEObjectUri(eObject, eReference, id);
+            
             String qualifiedType = null;
 
             String[] split = id.split(" "); //$NON-NLS-1$
