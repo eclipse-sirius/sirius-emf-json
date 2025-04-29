@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2022 Obeo.
+ * Copyright (c) 2020, 2025 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -434,7 +434,7 @@ public interface JsonResource extends Resource {
       * Specify a {@link Predicate} evaluating to true if a given {@link EDataType} should be serialized to/from Json
       * with {@link Gson}.
       */
-     String OPTION_SHOULD_EDATATYPE_BE_SERIALIZED_IN_JSON_PREDICATE = "shouldEDataTypeBeSerializedInJsonPredicate"; //$NON-NLS-1$
+    String OPTION_SHOULD_EDATATYPE_BE_SERIALIZED_IN_JSON_PREDICATE = "shouldEDataTypeBeSerializedInJsonPredicate"; //$NON-NLS-1$
 
     /**
      * An option to provide an ISerializationListener.
@@ -566,6 +566,23 @@ public interface JsonResource extends Resource {
         Object getValue(EObject eObject, EStructuralFeature feature, Object value);
 
         /**
+         * Called during the parsing of the JsonResource (at loading time). Use this method to change the URI of a value from
+         * a non-containment reference in order to change the value of a proxy. Return the given uri directly if you don't want
+         * to perform any change.
+         *
+         * @param eObject
+         *            the object containing the reference
+         * @param eReference
+         *            the reference to set
+         * @param uri
+         *            the uri of the object to add to the reference
+         * @return The new value of the uri to use
+         */
+        default String getEObjectUri(EObject eObject, EReference eReference, String uri) {
+            return uri;
+        }
+
+        /**
          * Implementation of the interface which does nothing.
          *
          * @author <a href="mailto:michael.charfadi@obeo.fr">Michael Charfadi</a>
@@ -592,7 +609,6 @@ public interface JsonResource extends Resource {
             public void postObjectLoading(EObject eObject, JsonObject jsonObject, boolean isTopObject) {
                 // Do nothing
             }
-
         }
     }
 
