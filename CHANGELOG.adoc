@@ -1,5 +1,33 @@
 = Changelog
 
+== v2.5.2 (work in progress)
+
+
+=== Deprecation warning
+
+None.
+
+
+=== Breaking changes
+
+None.
+
+
+=== Dependency update
+
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/66[#66] Switch to Google Gson 2.13.1
+
+
+=== Bug fixes
+
+None.
+
+
+=== New Features and Improvements
+
+None.
+
+
 
 == v2.5.1
 
