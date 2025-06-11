@@ -1,6 +1,6 @@
 = Changelog
 
-== v2.5.2 (work in progress)
+== v2.5.2
 
 
 === Deprecation warning
