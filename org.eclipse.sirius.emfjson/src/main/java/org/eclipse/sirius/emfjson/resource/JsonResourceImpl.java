@@ -31,6 +31,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.emf.common.util.EList;
@@ -304,12 +305,12 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
         if (handler != null) {
             handler.preLoad(this, inputStream, loadOptions);
         }
-        TypeToken<EObject> typeToken = new TypeToken<>() {
+        TypeToken<List<EObject>> typeToken = new TypeToken<>() {
             // nothing
         };
 
         GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(EObject.class, new GsonEObjectDeserializer(this, loadOptions));
+        gsonBuilder.registerTypeAdapter(List.class, new GsonEObjectDeserializer(this, loadOptions));
         Gson gson = gsonBuilder.disableHtmlEscaping().create();
 
         // Check if reader care of indent.
