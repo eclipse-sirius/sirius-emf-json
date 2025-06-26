@@ -44,12 +44,12 @@ public class MigrationLoadTests extends AbstractEMFJsonTests {
     public void testChangeReferenceName() {
         var jsonResourceProcessor = new JsonResource.IJsonResourceProcessor.NoOp() {
             @Override
-            public String getEObjectUri(EObject eObject, EReference eReference, String uri) {
+            public String getEObjectUri(JsonResource resource, EObject eObject, EReference eReference, String uri) {
                 if (eObject.eClass().getName().equals("Book")
                         && (eReference.getName().equals("library") || eReference.getName().equals("libraries"))) {
                     return uri.replace("branches", "customBranches");
                 }
-                return super.getEObjectUri(eObject, eReference, uri);
+                return super.getEObjectUri(resource, eObject, eReference, uri);
             }
         };
 

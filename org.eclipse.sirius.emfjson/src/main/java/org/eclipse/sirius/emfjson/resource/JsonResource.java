@@ -542,6 +542,8 @@ public interface JsonResource extends Resource {
          * features set. The jsonObject is the one that was used to set the features and can be used to retrieve values
          * of unknown features.
          *
+         * @param resource
+         *            The JsonResource that is serialized.
          * @param eObject
          *            the eObject that have been loaded.
          * @param jsonObject
@@ -549,12 +551,14 @@ public interface JsonResource extends Resource {
          * @param isTopObject
          *            if the given JsonObject is a top element.
          */
-        void postObjectLoading(EObject eObject, JsonObject jsonObject, boolean isTopObject);
+        void postObjectLoading(JsonResource resource, EObject eObject, JsonObject jsonObject, boolean isTopObject);
 
         /**
          * Called during the parsing of JsonResource (at loading time). If a feature value has changed since a previous
          * version, use this method to return the correct expected value. Return null if it did not change.
          *
+         * @param resource
+         *            The JsonResource that is serialized.
          * @param eObject
          *            the object containing the feature.
          * @param feature
@@ -563,22 +567,24 @@ public interface JsonResource extends Resource {
          *            the initial serialized value.
          * @return The new value.
          */
-        Object getValue(EObject eObject, EStructuralFeature feature, Object value);
+        Object getValue(JsonResource resource, EObject eObject, EStructuralFeature feature, Object value);
 
         /**
          * Called during the parsing of the JsonResource (at loading time). Use this method to change the URI of a value from
          * a non-containment reference in order to change the value of a proxy. Return the given uri directly if you don't want
          * to perform any change.
          *
+         * @param resource
+         *            The JsonResource that is serialized.
          * @param eObject
-         *            the object containing the reference
+         *            the object containing the reference.
          * @param eReference
-         *            the reference to set
+         *            the reference to set.
          * @param uri
-         *            the uri of the object to add to the reference
-         * @return The new value of the uri to use
+         *            the uri of the object to add to the reference.
+         * @return The new value of the uri to use.
          */
-        default String getEObjectUri(EObject eObject, EReference eReference, String uri) {
+        default String getEObjectUri(JsonResource resource, EObject eObject, EReference eReference, String uri) {
             return uri;
         }
 
@@ -600,13 +606,13 @@ public interface JsonResource extends Resource {
             }
 
             @Override
-            public Object getValue(EObject eObject, EStructuralFeature feature, Object value) {
+            public Object getValue(JsonResource resource, EObject eObject, EStructuralFeature feature, Object value) {
                 // Do nothing
                 return null;
             }
 
             @Override
-            public void postObjectLoading(EObject eObject, JsonObject jsonObject, boolean isTopObject) {
+            public void postObjectLoading(JsonResource resource, EObject eObject, JsonObject jsonObject, boolean isTopObject) {
                 // Do nothing
             }
         }

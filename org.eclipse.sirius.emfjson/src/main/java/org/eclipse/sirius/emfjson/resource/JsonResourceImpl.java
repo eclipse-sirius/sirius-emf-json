@@ -37,7 +37,6 @@ import java.util.Map;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl;
 import org.eclipse.sirius.emfjson.utils.GsonEObjectDeserializer;
 import org.eclipse.sirius.emfjson.utils.GsonEObjectSerializer;
@@ -118,7 +117,7 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
      *            a map of serialization options
      * @return the json representation of the given Resource
      */
-    public static String toJson(Resource resource, Map<Object, Object> options) {
+    public static String toJson(JsonResource resource, Map<Object, Object> options) {
         Map<Object, Object> loadOptions = new HashMap<>();
         if (options != null) {
             loadOptions.putAll(options);
@@ -259,7 +258,7 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
      *            serialization's options
      * @return The Json tree representation of the serialized resource
      */
-    public static JsonElement toJsonTree(Resource resource, Map<?, ?> options) {
+    public static JsonElement toJsonTree(JsonResource resource, Map<?, ?> options) {
         Map<Object, Object> loadOptions = new HashMap<>();
         if (options != null) {
             loadOptions.putAll(options);

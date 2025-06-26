@@ -143,7 +143,7 @@ public class JsonHelper {
     /**
      * The json resource.
      */
-    protected Resource resource;
+    protected JsonResource resource;
 
     /**
      * Set to <code>true</code> if URIs should be deresolved.
@@ -216,7 +216,7 @@ public class JsonHelper {
      * @param resource
      *            the resource
      */
-    public JsonHelper(Resource resource) {
+    public JsonHelper(JsonResource resource) {
         this();
         this.setResource(resource);
     }
@@ -245,7 +245,7 @@ public class JsonHelper {
      * @param resource
      *            the resource to set
      */
-    public void setResource(Resource resource) {
+    public void setResource(JsonResource resource) {
         this.resource = resource;
         if (resource == null) {
             this.resourceURI = null;
@@ -616,7 +616,7 @@ public class JsonHelper {
      *            the value to set
      */
     public void setValue(EObject object, EStructuralFeature feature, Object value) {
-        Object newValue = this.jsonResourceProcessor.getValue(object, feature, value);
+        Object newValue = this.jsonResourceProcessor.getValue(this.resource, object, feature, value);
         if (newValue == null) {
             newValue = value;
         }

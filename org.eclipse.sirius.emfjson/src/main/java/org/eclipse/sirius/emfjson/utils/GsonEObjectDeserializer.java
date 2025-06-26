@@ -90,12 +90,12 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     /**
      * Data Structure that associate an NsURI to a prefix.
      */
-    private Map<String, String> prefixToNsURi = new HashMap<String, String>();
+    private Map<String, String> prefixToNsURi = new HashMap<>();
 
     /**
      * The list of All root elements.
      */
-    private List<EObject> rootElements = new ArrayList<EObject>();
+    private List<EObject> rootElements = new ArrayList<>();
 
     /**
      * The list of Reference to object that are not deserialized yet.
@@ -163,12 +163,12 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
         }
 
         this.helper = (JsonHelper) this.options.get(JsonResource.OPTION_CUSTOM_HELPER);
-        if (this.helper == null) {
-            this.helper = new JsonHelper(resource);
-            this.helper.setJsonResourceProcessor(this.jsonResourceProcessor);
-        }
-        if (resource instanceof JsonResource) {
-            this.resource = (JsonResource) resource;
+        if (resource instanceof JsonResource jsonResource) {
+            this.resource = jsonResource;
+            if (this.helper == null) {
+                this.helper = new JsonHelper(jsonResource);
+                this.helper.setJsonResourceProcessor(this.jsonResourceProcessor);
+            }
         }
         this.resourceSet = resource.getResourceSet();
         if (this.resourceSet == null) {
@@ -209,7 +209,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
 
         this.eObjectHandler = (JsonResource.IEObjectHandler) this.options.get(JsonResource.OPTION_EOBJECT_HANDLER);
 
-        this.forwardSingleReferences = new ArrayList<GsonEObjectDeserializer.SingleReference>();
+        this.forwardSingleReferences = new ArrayList<>();
 
         this.helper.setOptions(this.options);
 
@@ -417,7 +417,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                 this.resource.setID(eObject, idJsonElement.getAsString());
             }
         }
-        this.jsonResourceProcessor.postObjectLoading(eObject, object, isTopObject);
+        this.jsonResourceProcessor.postObjectLoading(this.resource, eObject, object, isTopObject);
         return eObject;
     }
 
@@ -513,7 +513,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
      */
     private void deserializeSingleNonContainmentEReference(EReference eReference, JsonElement value, EObject eObject) {
         String id = this.getAsFlexibleString(value);
-        id = this.jsonResourceProcessor.getEObjectUri(eObject, eReference, id);
+        id = this.jsonResourceProcessor.getEObjectUri(this.resource, eObject, eReference, id);
 
         String qualifiedType = null;
 
@@ -606,7 +606,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     /**
      * Resolves a type from a qualified name (e.g. "flow:System") into the corresponding EClass (or null) using the
      * resource set's package registry.
-     * 
+     *
      * @param qualifiedType
      *            the qualified name of the type to resolve.
      * @return the corresponding EClass, or null.
@@ -675,8 +675,8 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
         JsonArray array = this.getAsFlexibleArray(value);
         for (int i = 0; i < array.size(); ++i) {
             String id = array.get(i).getAsString();
-            id = this.jsonResourceProcessor.getEObjectUri(eObject, eReference, id);
-            
+            id = this.jsonResourceProcessor.getEObjectUri(this.resource, eObject, eReference, id);
+
             String qualifiedType = null;
 
             String[] split = id.split(" "); //$NON-NLS-1$

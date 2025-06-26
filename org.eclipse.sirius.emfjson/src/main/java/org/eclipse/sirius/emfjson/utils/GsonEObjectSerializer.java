@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2023 Obeo.
+ * Copyright (c) 2020, 2025 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -152,14 +152,14 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         this.eResource = resource;
         this.resourceEntityHandler = (ResourceEntityHandler) serializedOptions.get(JsonResource.OPTION_RESOURCE_ENTITY_HANDLER);
         if (this.resourceEntityHandler instanceof JsonResource.URIHandler && !serializedOptions.containsKey(JsonResource.OPTION_URI_HANDLER)) {
-            Map<Object, Object> newOptions = new LinkedHashMap<Object, Object>(serializedOptions);
+            Map<Object, Object> newOptions = new LinkedHashMap<>(serializedOptions);
             newOptions.put(JsonResource.OPTION_URI_HANDLER, this.resourceEntityHandler);
             serializedOptions = newOptions;
         }
 
         this.helper = (JsonHelper) serializedOptions.get(JsonResource.OPTION_CUSTOM_HELPER);
-        if (this.helper == null) {
-            this.helper = new JsonHelper(resource);
+        if (resource instanceof JsonResource jsonResource && this.helper == null) {
+            this.helper = new JsonHelper(jsonResource);
         }
         Object metaData = serializedOptions.get(JsonResource.OPTION_EXTENDED_META_DATA);
         if (metaData instanceof Boolean) {
