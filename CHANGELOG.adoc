@@ -1,5 +1,18 @@
 = Changelog
 
+== v2.5.3 (work in progress)
+
+
+=== Breaking changes
+
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/68[#68] Add `JsonResource` parameter to all `IJsonResourceProcessor` methods
+`JsonHelper#resource` class field is now a `JsonResource` instead of a `Resource`.
+
+=== New features and improvements
+
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/68[#68] Add `JsonResource` parameter to all `IJsonResourceProcessor` methods
+
+
 == v2.5.2
 
 

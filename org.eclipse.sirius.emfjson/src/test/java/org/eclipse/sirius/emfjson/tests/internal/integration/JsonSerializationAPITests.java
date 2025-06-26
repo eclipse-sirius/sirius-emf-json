@@ -77,10 +77,14 @@ public class JsonSerializationAPITests extends AbstractEMFJsonTests {
         Resource resource = resourceSet.createResource(URI.createURI(jsonResourceURI));
         resource.getContents().addAll(modelResource.getContents());
 
-        JsonElement jsonTree = JsonResourceImpl.toJsonTree(resource, this.options);
-        String jsonTreeString = jsonTree.toString();
+        if (resource instanceof JsonResource jsonResource) {
+            JsonElement jsonTree = JsonResourceImpl.toJsonTree(jsonResource, this.options);
+            String jsonTreeString = jsonTree.toString();
 
-        Assert.assertEquals(expectedResource, jsonTreeString);
+            Assert.assertEquals(expectedResource, jsonTreeString);
+        } else {
+            Assert.fail("Resource is not a JsonResource");
+        }
     }
 
     /**

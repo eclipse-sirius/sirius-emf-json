@@ -299,9 +299,9 @@ public abstract class AbstractEMFJsonTests {
             resource = resourceSet.createResource(uri);
             String extension = resource.getURI().fileExtension();
             if (extension.equals(JsonResourceFactoryImpl.EXTENSION)) {
-                if (this.options.get(JsonResource.OPTION_CUSTOM_HELPER) instanceof JsonHelper) {
+                if (this.options.get(JsonResource.OPTION_CUSTOM_HELPER) instanceof JsonHelper && resource instanceof JsonResource jsonResource) {
                     JsonHelper jsonHelper = (JsonHelper) this.options.get(JsonResource.OPTION_CUSTOM_HELPER);
-                    jsonHelper.setResource(resource);
+                    jsonHelper.setResource(jsonResource);
                 }
                 resource.load(inputStream, this.options);
             } else {
