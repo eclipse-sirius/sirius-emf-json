@@ -18,7 +18,7 @@
 
 	<groupId>org.eclipse.sirius</groupId>
     <artifactId>org.eclipse.sirius.emfjson.parent</artifactId>
-	<version>2.5.2-SNAPSHOT</version>
+	<version>2.5.3-SNAPSHOT</version>
 
 	<name>Sirius EMF JSON - Parent</name>
 	<packaging>pom</packaging>
