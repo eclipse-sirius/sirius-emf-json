@@ -1,5 +1,13 @@
 = Changelog
 
+== v2.5.4 (work in progress)
+
+
+=== New features and improvements
+
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/70[#70] Improve custom data types support
+
+
 == v2.5.3
 
 

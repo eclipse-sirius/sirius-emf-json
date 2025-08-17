@@ -22,6 +22,8 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -33,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -993,57 +996,55 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         JsonElement value = null;
         EClassifier eType = eAttribute.getEType();
 
-        if (EcorePackage.eINSTANCE.getEString().equals(eType)) {
-            value = this.serializeEStringEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEBoolean().equals(eType)) {
-            value = this.serializeEBooleanEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEBooleanObject().equals(eType)) {
-            value = this.serializeEBooleanEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEInt().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEIntegerObject().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEBigDecimal().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEBigInteger().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEByte().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEByteArray().equals(eType)) {
-            value = this.serializeEByteArrayEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEByteObject().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEChar().equals(eType)) {
-            value = this.serializeEStringEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getECharacterObject().equals(eType)) {
-            value = this.serializeEStringEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEDate().equals(eType)) {
-            value = this.serializeEDateEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEDouble().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEDoubleObject().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEFloat().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEFloatObject().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getELong().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getELongObject().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEShort().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (EcorePackage.eINSTANCE.getEShortObject().equals(eType)) {
-            value = this.serializeENumberEAttribute(eObject, eAttribute);
-        } else if (eType instanceof EEnum) {
+        if (eType instanceof EEnum) {
             value = this.serializeEEnumEAttribute(eObject, eAttribute);
-        } else if (eType instanceof EDataType) {
-            value = this.serializeEDataType(eObject, eAttribute);
+        } else if (eType instanceof EDataType eDataType) {
+            if (this.isStringType(eDataType)) {
+                value = this.serializeEStringEAttribute(eObject, eAttribute);
+            } else if (this.isNumberType(eDataType)) {
+                value = this.serializeENumberEAttribute(eObject, eAttribute);
+            } else if (this.isBooleanType(eDataType)) {
+                value = this.serializeEBooleanEAttribute(eObject, eAttribute);
+            } else if (EcorePackage.eINSTANCE.getEByteArray().equals(eDataType)) {
+                value = this.serializeEByteArrayEAttribute(eObject, eAttribute);
+            } else if (EcorePackage.eINSTANCE.getEDate().equals(eDataType)) {
+                value = this.serializeEDateEAttribute(eObject, eAttribute);
+            } else {
+                value = this.serializeEDataType(eObject, eAttribute);
+            }
         } else {
             throw new InvalidParameterException();
         }
 
         return value;
+    }
+
+    private boolean isStringType(EDataType type) {
+        return Objects.equals(type.getInstanceClassName(), String.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), Character.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), char.class.getName());
+    }
+
+    private boolean isNumberType(EDataType type) {
+        return  Objects.equals(type.getInstanceClassName(), Long.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), long.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), Integer.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), int.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), Short.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), short.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), Byte.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), byte.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), Double.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), double.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), Float.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), float.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), BigInteger.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), BigDecimal.class.getName());
+    }
+
+    private boolean isBooleanType(EDataType type) {
+        return Objects.equals(type.getInstanceClassName(), Boolean.class.getName()) ||
+                Objects.equals(type.getInstanceClassName(), boolean.class.getName());
     }
 
     /**
