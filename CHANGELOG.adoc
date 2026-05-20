@@ -8,10 +8,10 @@
 
 === New features and improvements
 
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/73[#73] Generate and publish SBOMs
 
 
 == v2.5.3
-
 
 === Breaking changes
 
@@ -24,7 +24,6 @@
 
 
 == v2.5.2
-
 
 === Deprecation warning
 
@@ -53,7 +52,6 @@ None.
 
 
 == v2.5.1
-
 
 === Deprecation warning
 
