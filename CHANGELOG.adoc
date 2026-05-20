@@ -6,6 +6,8 @@
 
 === New features and improvements
 
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/73[#73] [releng] The Sirius EMF JSON build now generates and publishes an SBOM on https://sbom.eclipse.org/projects/18e4f95f-cc5d-495f-a401-cb833dd6d265[the Eclipse Foundation's DependencyTrack instance].
+
 == v2.5.3
 
 
