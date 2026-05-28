@@ -78,18 +78,18 @@ jobs:
           echo "PROJECT_VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Product version: $VERSION"
 
-      - name: Upload sbom
+      - name: Upload SBOM
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: backend-sbom
+          name: sbom
           path: ${{ env.PRODUCT_PATH }}/target/bom.json
 
   store-sbom-data: # stores sbom and metadata in a predefined format for otterdog to pick up
     needs: ["generate-sbom"]
     uses: eclipse-csi/workflows/.github/workflows/store-sbom-data.yml@main
     with:
-      projectName: "backend"
+      projectName: "Sirius EMF JSON"
       projectVersion: ${{ needs.generate-sbom.outputs.project-version }}
-      bomArtifact: "backend-sbom"
+      bomArtifact: "sbom"
       bomFilename: "bom.json"
       parentProject: "18e4f95f-cc5d-495f-a401-cb833dd6d265"
