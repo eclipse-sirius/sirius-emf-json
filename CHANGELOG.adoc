@@ -2,6 +2,10 @@
 
 == v2.5.4
 
+=== Dependency update
+
+- [releng] Switched to https://download.eclipse.org/modeling/emf/emf/builds/release/2.46.0/index.html[Eclipse EMF 2.46.0] (`org.eclipse.emf.common` v2.45.0 and `org.eclipse.emf.ecore` v2.42.0.
+
 === Breaking changes
 
 
