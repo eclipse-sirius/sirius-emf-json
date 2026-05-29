@@ -8,6 +8,7 @@
 * `org.eclipse.emf.common` from `2.31.0` to `2.45.0`
 * `org.eclipse.emf.ecore` from `2.37.0` to `2.42.0`
 * `org.eclipse.emf.ecore.xmi` from `2.38.0` to `2.40.0`
+- [releng] Switched to https://github.com/google/gson/releases/tag/gson-parent-2.13.2[Google GSON 2.13.2].
 
 === Breaking changes
 
