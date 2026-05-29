@@ -4,7 +4,8 @@
 
 === Dependency update
 
-- [releng] Switched to https://download.eclipse.org/modeling/emf/emf/builds/release/2.46.0/index.html[Eclipse EMF 2.46.0] (`org.eclipse.emf.common` v2.45.0 and `org.eclipse.emf.ecore` v2.42.0.
+- [releng] Switched to https://download.eclipse.org/modeling/emf/emf/builds/release/2.46.0/index.html[Eclipse EMF 2.46.0] (`org.eclipse.emf.common` v2.45.0 and `org.eclipse.emf.ecore` v2.42.0).
+- [releng] Switched to https://github.com/google/gson/releases/tag/gson-parent-2.13.2[Google GSON 2.13.2].
 
 === Breaking changes
 
