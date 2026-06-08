@@ -4,7 +4,7 @@ Bundle-Name: Eclipse Sirius - EMF JSON
 Bundle-SymbolicName: org.eclipse.sirius.emfjson
 Bundle-Version: 2.4.0.qualifier
 Bundle-Vendor: Eclipse Modeling Project
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Bundle-Localization: bundle
 Export-Package: org.eclipse.sirius.emfjson.resource;version="1.1.0",
  org.eclipse.sirius.emfjson.resource.exception;version="1.0.0",
