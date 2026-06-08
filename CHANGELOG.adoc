@@ -4,7 +4,7 @@
 
 === Breaking changes
 
-
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/79[#79]  Sirius EMF JSON now requires Java 21 or later to build and to run.
 
 === New features and improvements
 

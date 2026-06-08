@@ -16,7 +16,7 @@ mvn clean package
 
 from the top-level directory.
 
-WARNING: Note that you will need to use **Java 17** or later to run the build.
+WARNING: Note that you will need to use **Java 21** or later to run the build.
 
 == Usage
 
