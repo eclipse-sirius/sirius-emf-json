@@ -27,6 +27,12 @@ Use `PROFILE=1` for additional, separately recorded JFR runs; never include
 their CSV files in timing comparisons. Do not run builds or other benchmarks
 concurrently. Increase warmup if measurements have not stabilized.
 
+Additional candidate class directories may follow the first candidate. Output
+names are `baseline`, `candidate`, `candidate2`, and so on; the configuration
+records their paths and each compiled variant is fingerprinted. Variant order
+is reversed on even forks. This supports cumulative attribution without
+running identical intermediate variants again in separate pairwise campaigns.
+
 The output directory contains golden JSON, a persistent-model fingerprint,
 runtime provenance, raw CSVs, validation logs and optional JFR recordings.
 Use a fresh output directory for each experiment. Failed validation exits
@@ -50,11 +56,29 @@ measured interval; include it when exporting samples. This avoids attributing
 startup instrumentation and accumulated pre-recording allocations to the
 codec. Sampling does not replace the exact per-thread allocation counters.
 
+Summarize unprofiled forks with `python3.13 benchmarks/summarize.py
+target/performance/comparison/*-fork*.csv`. Use `--json` for machine-readable
+results. The analysis treats JVMs as independent replicas and keeps separate
+campaign directories separate. Empty or invalid CSVs fail analysis.
+
+`OPERATIONS='tree emit parse materialize save-string load-string'` selects
+additional diagnostics: DOM construction, buffered emission of a retained
+DOM, JSON parsing, construction of EMF objects from a retained DOM, and the
+String conversions at the document boundary. These phases are independent
+experiments, not additive timings: retained trees change live memory, and
+direct materialization omits the `Resource.load` lifecycle. Their ratios
+are not guaranteed gains from a hypothetical streaming implementation.
+
 ```sh
 /path/to/jdk21/bin/jfr print --json \
   --events emfjson.Measurement,jdk.ExecutionSample,jdk.NativeMethodSample,jdk.ObjectAllocationSample \
   target/performance/comparison/profile-baseline-save.jfr
 ```
+
+Save this generated JSON to an artifact file and pass it to `summarize.py`.
+The analyzer requires the measurement interval and drops its first allocation
+sample per thread because that weight can include pre-interval allocations.
+CPU samples and weighted allocations are estimates; inclusive costs overlap.
 
 Apollo's libraries are merged into one document. Use the ordinary regression
 suite and growing-list tests to cover interdocument references and extension

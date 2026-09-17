@@ -9,6 +9,8 @@
 === New features and improvements
 
 - Add an optional, reproducible SysML serialization benchmark with allocation measurements and isolated JFR recordings.
+- Reduce JSON save allocations by buffering character encoding when no resource handler observes the output stream.
+- Add isolated codec-phase diagnostics and campaign-aware CPU/allocation profile analysis.
 
 
 == v2.5.4
