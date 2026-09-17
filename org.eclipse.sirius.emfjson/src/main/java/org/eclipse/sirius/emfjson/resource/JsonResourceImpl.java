@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2025 Obeo.
+ * Copyright (c) 2020, 2026 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -21,6 +21,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -373,7 +374,8 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
         Gson gson = gsonBuilder.disableHtmlEscaping().create();
 
         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, encoding.toString());
-        JsonWriter writer = new JsonWriter(outputStreamWriter);
+        // Resource handlers can observe the unflushed stream in postSave.
+        JsonWriter writer = new JsonWriter(handler == null ? new BufferedWriter(outputStreamWriter) : outputStreamWriter);
         if (prettyPrintingIndent instanceof String) {
             writer.setIndent((String) prettyPrintingIndent);
         }

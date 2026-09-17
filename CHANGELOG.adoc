@@ -21,6 +21,8 @@ None.
 === Bug fixes
 
 - https://github.com/eclipse-sirius/sirius-emf-json/issues/84[#84] Process document migrations before namespace resolution.
+- Add an optional, reproducible SysML serialization benchmark with allocation measurements and isolated JFR recordings.
+- Reduce JSON save allocations by buffering character encoding when no resource handler observes the output stream.
 
 
 == v2.5.4
