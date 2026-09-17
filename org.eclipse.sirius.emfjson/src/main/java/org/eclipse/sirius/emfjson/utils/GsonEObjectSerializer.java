@@ -209,7 +209,7 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      */
     @Override
     public JsonElement serialize(List<EObject> eObjects, Type type, JsonSerializationContext context) {
-        JsonArray data = new JsonArray();
+        JsonArray data = new JsonArray(eObjects.size());
         for (EObject eObject : eObjects) {
             data.add(this.createData(eObject));
         }
@@ -1436,7 +1436,8 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         JsonElement jsonElement = null;
         Object referenceValue = this.helper.getValue(eObject, eReference);
         if (referenceValue instanceof Iterable<?>) {
-            JsonArray jsonArray = new JsonArray();
+            int initialCapacity = referenceValue instanceof Collection<?> collection ? collection.size() : 0;
+            JsonArray jsonArray = new JsonArray(initialCapacity);
             Iterable<?> iterable = (Iterable<?>) referenceValue;
             for (Object object : iterable) {
                 if (object instanceof EObject) {
@@ -1461,9 +1462,10 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
     @SuppressWarnings("unchecked")
     private JsonElement serializeMultipleNonContainmentEReference(EObject eObject, EReference eReference) {
         JsonElement jsonElement = null;
-        JsonArray jsonArray = new JsonArray();
         Object referenceValue = this.helper.getValue(eObject, eReference);
-        for (EObject value : (InternalEList<? extends EObject>) referenceValue) {
+        InternalEList<? extends EObject> referenceValues = (InternalEList<? extends EObject>) referenceValue;
+        JsonArray jsonArray = new JsonArray(referenceValues.size());
+        for (EObject value : referenceValues) {
             switch (this.docKindMany(eObject, eReference)) {
             case SAME_DOC:
                 String id = this.helper.getIDREF(value);
