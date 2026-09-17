@@ -21,7 +21,6 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,11 +28,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
@@ -375,7 +376,8 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
 
         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, encoding.toString());
         // Extra buffering would change the bytes visible to resource handlers in postSave.
-        JsonWriter writer = new JsonWriter(handler == null ? new BufferedWriter(outputStreamWriter) : outputStreamWriter);
+        Writer characterWriter = handler == null ? new UnsynchronizedBufferedWriter(outputStreamWriter) : outputStreamWriter;
+        JsonWriter writer = new JsonWriter(characterWriter);
         if (prettyPrintingIndent instanceof String) {
             writer.setIndent((String) prettyPrintingIndent);
         }
@@ -392,6 +394,83 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
 
         if (objectSerializer.getDanglingHREFException() != null) {
             throw new IOWrappedException(objectSerializer.getDanglingHREFException());
+        }
+    }
+
+    /**
+     * Buffers character writes for a single save operation without synchronization.
+     */
+    private static final class UnsynchronizedBufferedWriter extends Writer {
+
+        private static final int BUFFER_SIZE = 8192;
+
+        private final Writer delegate;
+
+        private final char[] buffer = new char[BUFFER_SIZE];
+
+        private int bufferedCharacterCount;
+
+        private UnsynchronizedBufferedWriter(Writer delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(int character) throws IOException {
+            if (this.bufferedCharacterCount == this.buffer.length) {
+                this.flushBuffer();
+            }
+            this.buffer[this.bufferedCharacterCount++] = (char) character;
+        }
+
+        @Override
+        public void write(char[] characters, int offset, int length) throws IOException {
+            Objects.checkFromIndexSize(offset, length, characters.length);
+            if (length >= this.buffer.length) {
+                this.flushBuffer();
+                this.delegate.write(characters, offset, length);
+                return;
+            }
+            if (length > this.buffer.length - this.bufferedCharacterCount) {
+                this.flushBuffer();
+            }
+            System.arraycopy(characters, offset, this.buffer, this.bufferedCharacterCount, length);
+            this.bufferedCharacterCount += length;
+        }
+
+        @Override
+        public void write(String string, int offset, int length) throws IOException {
+            Objects.checkFromIndexSize(offset, length, string.length());
+            if (length >= this.buffer.length) {
+                this.flushBuffer();
+                this.delegate.write(string, offset, length);
+                return;
+            }
+            if (length > this.buffer.length - this.bufferedCharacterCount) {
+                this.flushBuffer();
+            }
+            string.getChars(offset, offset + length, this.buffer, this.bufferedCharacterCount);
+            this.bufferedCharacterCount += length;
+        }
+
+        @Override
+        public void flush() throws IOException {
+            this.flushBuffer();
+            this.delegate.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            // Close the delegate even if flushing fails.
+            try (Writer output = this.delegate) {
+                this.flushBuffer();
+            }
+        }
+
+        private void flushBuffer() throws IOException {
+            if (this.bufferedCharacterCount > 0) {
+                this.delegate.write(this.buffer, 0, this.bufferedCharacterCount);
+                this.bufferedCharacterCount = 0;
+            }
         }
     }
 
