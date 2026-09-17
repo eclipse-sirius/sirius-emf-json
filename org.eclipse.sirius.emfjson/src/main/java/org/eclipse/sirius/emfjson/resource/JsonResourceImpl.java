@@ -21,7 +21,6 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,11 +28,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
@@ -375,7 +376,7 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
 
         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, encoding.toString());
         // Resource handlers can observe the unflushed stream in postSave.
-        JsonWriter writer = new JsonWriter(handler == null ? new BufferedWriter(outputStreamWriter) : outputStreamWriter);
+        JsonWriter writer = new JsonWriter(handler == null ? new UnsynchronizedBufferedWriter(outputStreamWriter) : outputStreamWriter);
         if (prettyPrintingIndent instanceof String) {
             writer.setIndent((String) prettyPrintingIndent);
         }
@@ -392,6 +393,79 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
 
         if (objectSerializer.getDanglingHREFException() != null) {
             throw new IOWrappedException(objectSerializer.getDanglingHREFException());
+        }
+    }
+
+    private static final class UnsynchronizedBufferedWriter extends Writer {
+
+        private static final int BUFFER_SIZE = 8192;
+
+        private final Writer writer;
+
+        private final char[] buffer = new char[BUFFER_SIZE];
+
+        private int count;
+
+        private UnsynchronizedBufferedWriter(Writer writer) {
+            this.writer = writer;
+        }
+
+        @Override
+        public void write(int character) throws IOException {
+            if (this.count == this.buffer.length) {
+                this.flushBuffer();
+            }
+            this.buffer[this.count++] = (char) character;
+        }
+
+        @Override
+        public void write(char[] characters, int offset, int length) throws IOException {
+            Objects.checkFromIndexSize(offset, length, characters.length);
+            if (length >= this.buffer.length) {
+                this.flushBuffer();
+                this.writer.write(characters, offset, length);
+            } else {
+                if (length > this.buffer.length - this.count) {
+                    this.flushBuffer();
+                }
+                System.arraycopy(characters, offset, this.buffer, this.count, length);
+                this.count += length;
+            }
+        }
+
+        @Override
+        public void write(String string, int offset, int length) throws IOException {
+            Objects.checkFromIndexSize(offset, length, string.length());
+            if (length >= this.buffer.length) {
+                this.flushBuffer();
+                this.writer.write(string, offset, length);
+            } else {
+                if (length > this.buffer.length - this.count) {
+                    this.flushBuffer();
+                }
+                string.getChars(offset, offset + length, this.buffer, this.count);
+                this.count += length;
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            this.flushBuffer();
+            this.writer.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            try (Writer output = this.writer) {
+                this.flushBuffer();
+            }
+        }
+
+        private void flushBuffer() throws IOException {
+            if (this.count > 0) {
+                this.writer.write(this.buffer, 0, this.count);
+                this.count = 0;
+            }
         }
     }
 
