@@ -14,15 +14,27 @@ classpath (including their dependencies). Relative entries resolve against
 the invoking working directory. Project-resolved EMF/Gson dependencies take
 precedence over shaded copies in the external classpath.
 
+The acceptance protocol for this campaign is one fresh JVM per variant, two
+warmups and ten measured iterations. Pass those settings explicitly:
+
 ```sh
-BENCHMARK_JAVA_HOME=/path/to/jdk21 bash benchmarks/run.sh \
+FORKS=1 WARMUP=2 ITERATIONS=10 BENCHMARK_JAVA_HOME=/path/to/jdk21 \
+  bash benchmarks/run.sh \
   /path/to/apollo-11.bin /path/to/dependency-classpath.txt \
   target/performance/comparison /path/to/reference/classes \
   /path/to/candidate/classes
 ```
 
-Defaults: five JVM forks, ten warmup iterations, thirty measured iterations,
-2 GiB fixed heap. Override with `FORKS`, `WARMUP`, `ITERATIONS`, `HEAP`.
+All functional validation remains enabled. This deliberately short acceptance
+protocol has limited statistical confidence: two warmups may not stabilize
+the JVM, and one fork cannot establish between-JVM variability. Report results
+as observations from one JVM per variant; ten iterations are not ten independent
+JVM replicas, and do not support a confidence interval across JVMs.
+
+For even shorter exploratory screening, use `ITERATIONS=5` with the same one
+fork and two warmups. Screening does not replace the ten-measurement acceptance
+run. Keep the 2 GiB fixed heap and record any changes to `FORKS`, `WARMUP`,
+`ITERATIONS` or `HEAP`. Historical longer campaigns retain their own protocols.
 Use `PROFILE=1` for additional, separately recorded JFR runs; never include
 their CSV files in timing comparisons. Do not run builds or other benchmarks
 concurrently. Increase warmup if measurements have not stabilized.

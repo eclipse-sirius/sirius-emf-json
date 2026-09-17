@@ -1,0 +1,336 @@
+# EMF JSON performance investigation
+
+## Reproduction boundary
+
+Reference: emfjson `4ab919838f3f55104b7b4612d595f6c2af2da7d1`.
+The reference passes `mvn verify` with Temurin 21.0.6+7.
+Production dependencies and JSON contracts remain unchanged.
+
+The external Apollo 11 binary contains 138,556 EObjects, including the
+project and standard libraries merged into one resource. Its SHA-256 is
+`b2e69adb4c6c6da331f22509d0801942bb258d0eb3c3a7977919cfb60b7fa8e6`.
+It primarily exercises references within one document; it cannot alone
+establish performance for references between documents.
+
+Measurements use a real `JsonResourceImpl`, matching the resource created by
+Sirius Web master at `6843419ef5474303d6de347b44062f2a3d59e42e`.
+Binary loading and SysML initialization are preparation, not part of JSON
+timings. IDs are preserved from the input. The benchmark's UUID adapters
+reproduce Sirius Web's ID representation.
+
+Workstation: Intel Core Ultra 7 155H, eight online logical CPUs, 93 GiB RAM,
+Linux 6.4.0-150600.21-default. JVM: Temurin 21.0.6+7, G1, 2 GiB fixed heap.
+Unprofiled measurements and JFR recordings run separately. CPU and allocation
+profiles are sampled estimates; inclusive stack percentages overlap.
+
+The aborted `final-comparison` campaign contains the subsequently rejected
+reference-classification cache. Its files are exploratory artifacts, **not
+acceptance data for the retained implementation**. The corrected R4 campaign
+`compatible-final-comparison` was also interrupted when a quieter workstation
+window became available; it is exploratory, not a completed five-fork run.
+Phase attribution uses fresh `quiet-save` and `quiet-load` campaigns. Do not
+combine measurements across these campaigns into one population.
+
+The machine's CPU governor is `powersave`; frequency and desktop activity are
+not controlled by the harness. The user reduced workstation activity before
+the quiet campaigns. This reduces interference, but does not establish a
+dedicated benchmark machine or justify disregarding uncertainty intervals.
+
+## Experiment ledger
+
+| Hypothesis | Evidence to collect | Compatibility constraint | Result |
+| --- | --- | --- | --- |
+| Repeated classification of a reference list is quadratic | Growing-list counts confirm quadratic work, but Apollo has 738 such lists and every one is a singleton; scoped JFR attributes no CPU sample and 0.0194% of sampled allocations to `docKindMany` | Resource fragment and ID-manager callbacks can change reference ownership between elements | No change: there is no repeated scan on the target corpus, and a generic cache changes observable callback behavior |
+| Unbuffered JSON character writes allocate temporary arrays | Five-fork save comparison and final one-fork comparison below; `StreamEncoder` CPU/allocation stacks | Preserve stream visibility for resource handlers | Large measured allocation reduction |
+| Repeated metadata and ID lookup costs dominate remaining work | Post-optimization CPU/allocation profiles | No stale caches or changed extension calls | Pending |
+| Reference insertion or attachment dominates load | Five-fork load comparison below | Preserve uniqueness, opposites and notifications | Containment shortcut rejected: no convincing gain |
+| Avoiding untyped ID splitting reduces load allocation | Five-fork load comparison below | Preserve whitespace and processor ordering | Split shortcut rejected: no measured benefit over its base |
+| Per-write locking remains after character buffering | Cross-ordered 2+10 save comparisons and a post-change JFR | Preserve encoding, close/flush failures and resource-handler stream visibility | Accepted: save wall time fell by 17.3% in the final acceptance order; the reverse order observed 19.2% |
+| Gson tree construction dominates remaining allocations | Allocation profiles after simpler changes | Existing callbacks accept complete JSON trees | Pending |
+
+## Five-fork phase measurements
+
+Each row below represents five independent JVM forks on the same Apollo
+corpus, using the codec-only boundary and fixed JVM configuration above.
+Elapsed and CPU values are milliseconds per operation; allocations are bytes
+per operation. Rows identify cumulative experimental states, not interchangeable
+measurements of the final source. Timing variation between forks prevents
+assigning every small difference to the most recent edit.
+
+### Save: `quiet-save`
+
+| Experimental state | Elapsed ms | CPU ms | Allocated bytes |
+| --- | ---: | ---: | ---: |
+| Reference R0 | 520.8646 | 497.124 | 763,837,696 |
+| Buffer only | 445.3462 | 436.993 | 271,667,984 |
+| IDs plus buffer | 447.6491 | 442.083 | 271,667,984 |
+| Frozen-feature prototype plus preceding changes | 382.2853 | 376.256 | 269,498,064 |
+
+Buffering reduced observed allocation by 492,169,712 bytes per save, about
+64.4%, and the elapsed point estimate by about 14.5%. ID changes added no
+save-allocation benefit in this comparison and no demonstrated timing gain.
+The frozen-feature prototype's incremental point estimate was about 14.6%
+less elapsed time than IDs plus buffer, with 2,169,920 fewer allocated bytes.
+These are phase measurements, not confidence bounds on the final patch.
+
+After this campaign, review restricted feature caching to the exact
+`EClassImpl` class and restored iterator traversal for other implementations.
+The table therefore documents the earlier prototype; the final guard
+refinement is measured separately in `accepted-save` below. No tenfold gain
+is demonstrated.
+
+### Load: `quiet-load`
+
+| Experimental state | Elapsed ms | Elapsed interval ms | CPU ms | Allocated bytes |
+| --- | ---: | --- | ---: | ---: |
+| Reference R0 | 471.4969 | [449.72, 514.54] | 378.560 | 417,254,720 |
+| Containment shortcut | 509.1961 | [459.88, 516.33] | 424.868 | 417,254,720 |
+| IDs on containment shortcut | 523.1045 | [454.30, 591.90] | 425.568 | 409,564,728 |
+| Split shortcut | 520.0460 | [513.42, 557.14] | 429.848 | 412,824,808 |
+
+Timing intervals overlap. Containment shows no allocation reduction and no
+convincing elapsed-time benefit. Splitting avoidance shows no convincing
+timing improvement over its cumulative base and allocates more in this
+comparison. Neither candidate is retained. ID changes reduced allocation
+by 7,689,992 bytes on the containment base, but that is not an isolated
+comparison against the unchanged loader.
+
+### Isolated ID comparison: `id-load`
+
+This completed comparison used three forks, ten warmups and thirty measured
+operations per fork. It isolates the ID changes from the rejected containment
+and split trials; the loader source is unchanged from R0.
+
+| Experimental state | Elapsed ms | Elapsed interval ms | CPU ms | Allocated bytes |
+| --- | ---: | --- | ---: | ---: |
+| Reference R0 | 538.2586 | [502.8157, 558.6354] | 448.4801 | 417,254,720 |
+| I1: repeated-ID map guard only | 515.3263 | [514.2783, 537.4188] | 426.7521 | 409,564,720 |
+| I2: additionally cache manager selection | 514.2404 | [510.1629, 546.1433] | 422.5353 | 412,824,808 |
+
+The map guard saves 7,690,000 allocated bytes per load, about 1.84%, and is
+retained for that measured reduction. Its elapsed point estimate is 4.26%
+lower, but overlapping intervals do not establish an elapsed-time gain.
+Caching the manager adds only a 0.2% elapsed point-estimate difference, with
+no confirmed timing benefit and no allocation improvement over I1. The
+cached field was removed; each lookup continues to select the manager as
+before. No runtime benefit is claimed for that rejected experiment.
+
+The accepted source consists of buffering, the repeated-ID map guard, and
+frozen-feature skipping with the exact-class guard and iterator fallback.
+`accepted-save` compares R0, buffer plus I1 without feature skipping, and
+the full accepted variant, using one fork, ten warmups and thirty measured
+operations. Its completed results are below. The earlier five-fork feature
+prototype supports the mechanism but is not a five-fork measurement of the
+final guard implementation.
+
+### Final source: `accepted-save`
+
+| State | Elapsed ms | CPU ms | Allocated bytes |
+| --- | ---: | ---: | ---: |
+| Reference R0 | 442.562645 | 425.262126 | 763,837,712 |
+| Buffer plus repeated-ID guard, no feature skipping | 423.809968 | 405.149759 | 271,668,000 |
+| Final accepted implementation | 325.697065 | 322.136963 | 267,281,168 |
+
+The final implementation reduces the elapsed point estimate by 26.407% and
+allocated bytes by 65.008% against R0. Feature skipping contributes an
+incremental 23.15% elapsed reduction and 1.61% allocation reduction against
+buffer plus the repeated-ID guard in this run. These timings are provisional:
+there is only one JVM fork per state and no confidence interval. Thirty
+operations within one JVM do not substitute for independent forks. The
+different baseline times across campaigns also show why their populations
+must remain separate. No tenfold improvement is demonstrated.
+
+The accepted compiled snapshot in `target/performance/accepted-classes`
+combines the reviewed final serializer with I1 resource classes; the resource
+source was compared and found identical to I1. The final module's clean
+`verify` passed. Comparing its complete `target/classes` directory against
+`target/performance/accepted-classes` with `diff -qr` returned zero, verifying
+that the measured snapshot exactly matches the final compiled classes.
+The quiet campaign finished at 14:30:33 UTC, before the 14:30:53 UTC deadline
+when the workstation was needed for Zoom. Measurements from different
+activity windows must not be silently pooled. Final profiles have been
+recorded; their attribution analysis and application integration results
+remain pending.
+
+### Unsynchronized private writer
+
+After buffering removed repeated encoder allocation, the accepted profile still
+attributed 16.09% of save CPU samples directly to `BufferedWriter.implWrite`
+and 10.32% to `ReentrantLock.Sync.lock`. `JsonResourceImpl` uses its writer on
+one save thread, so the candidate replaces `BufferedWriter` with a private
+8 KiB character buffer whose methods do not lock. Encoding remains delegated
+to `OutputStreamWriter`. Saves with a resource handler retain the previous
+unbuffered writer because `postSave` can observe that stream boundary.
+
+The final acceptance comparison used one fresh JVM per variant, two warmups
+and ten measurements on the 138,556-object Apollo corpus. It ran the previously
+accepted classes first and the writer candidate second:
+
+| State | Elapsed ms | CPU ms | Allocated bytes |
+| --- | ---: | ---: | ---: |
+| Previous accepted implementation | 292.290594 | 292.269401 | 269,498,064 |
+| Unsynchronized private writer | 241.784749 | 239.020429 | 267,281,376 |
+
+The elapsed median fell by 17.28% and CPU by 18.22%. A separate reverse-order
+acceptance run observed 19.17% less elapsed time and 18.75% less CPU. The two
+runs disagree on a small allocation change (approximately plus or minus 0.8%),
+so no allocation improvement is attributed to this writer. Both comparisons
+produced the same 25,347,610 JSON bytes and passed the harness round-trip checks.
+They remain single-JVM observations without a between-JVM confidence interval.
+
+A scoped post-change JFR no longer ranks `BufferedWriter.implWrite` or
+`ReentrantLock` among the sampled save costs. The remaining save work is led by
+Gson tree construction/emission and EMF feature access. The complete Maven
+verification passes 528 tests, including byte-exact UTF-8/UTF-16LE, indentation,
+flush-failure and resource-handler boundary checks.
+
+## Compatibility ledger
+
+The following are source-level reasons for retaining each candidate, separate
+from the performance measurements needed to accept its claimed benefit.
+
+| Candidate | Preserved behavior and proof boundary | Regression coverage |
+| --- | --- | --- |
+| Buffered JSON character output | `JsonResourceImpl.doSave` buffers only without a resource handler. With a handler, `postSave` still sees the original unflushed stream boundary. Encoding, indentation, HTML escaping and writer closure stay unchanged. | `JsonWriterTests`: exact Unicode bytes in UTF-8/UTF-16LE, indentation, handler-visible byte count and final-flush failure propagation |
+| Unsynchronized private writer | The writer is private, created and consumed within one `doSave` call. It keeps the same 8 KiB capacity and delegates encoding, flushing and closing to `OutputStreamWriter`. A try-with-resources closes the delegate even if the final buffered write fails. The resource-handler path is unchanged. | The same `JsonWriterTests` plus the complete 528-test verification; the Apollo harness checks byte identity and round-trip structure |
+| Repeated ID assignment | `JsonResourceImpl.setID` still calls `IDManager.setId` and puts the new mapping on every assignment. It only avoids removing a key immediately before replacing the same key. A changed ID still removes its previous entry. | `RepeatedIDTests`: callback counts, equal but distinct ID strings, reassignment and detach |
+| Frozen feature skip indices | `GsonEObjectSerializer.serializeEAllStructuralFeatures` caches only frozen metadata of the exact `EClassImpl` class within that serializer. Other implementations retain iterator traversal, avoiding indexed traversal of custom sequential lists. Custom ordering retains the full ordered feature list. Each iteration rechecks transient/derived options and the feature filter, including after child callbacks; filters can still force excluded features. | `FrozenFeaturesSerializationTests`: exact output, explicit options, filter/comparator calls, custom-list iteration, mutable metadata and child callbacks changing remaining parent options |
+
+Frozen metadata is subject to EMF's contract that a frozen model must not be
+modified; freezing does not make all Java setters physically immutable.
+Mutable metamodels use the uncached path. The feature cache neither stores
+EObjects nor introduces a process-wide metamodel cache.
+
+### Rejected load shortcuts
+
+The containment trial restricted `addUnique` to exact standard containment
+list classes and checked the actual owner through non-resolving
+`eInternalContainer()`. Its tests covered order, opposites, callback
+preinsertion, redirected owners, specialized lists and proxy containers.
+The split trial guarded both existing `split(" ")` calls with an ASCII-space
+check, preserving the original split logic and URI processor ordering. Tests
+covered both cardinalities, local and typed external IDs and unusual whitespace.
+The latest complete Maven verification passed these tests before removal.
+
+These compatibility checks did not establish a performance benefit. The
+five-fork results above led to restoring `GsonEObjectDeserializer` exactly
+to R0 and removing the candidate-only test classes from the production tree.
+Source and test copies remain under `target/performance/rejected-load/`,
+with their original source-directory hierarchy, for reproducing the trials.
+These ignored artifacts must be archived separately before cleaning `target`.
+
+JDK 21 source constructs a one-element array for delimiter-free `String.split`.
+That is an optimization hypothesis, not proof that the array survives JIT
+optimization in this workload. Escape analysis may eliminate such allocation;
+the campaign does not prove that explanation, only the absence of a measured
+allocation improvement for the proposed guard.
+
+### Rejected reference-classification cache
+
+`docKindMany` scans a list to decide whether all entries use local fragments
+or cross-document URI syntax. Repeating it for every element is quadratic
+for local lists: a synthetic local list produces 400 target visits at size 20
+and 40,000 at size 200. However, classification is observable between elements:
+`JsonHelper.getIDREF` invokes `Resource.getURIFragment`, which may be overridden
+and may reach a custom ID manager. These extension callbacks can move a later
+target to another resource. A cache guarded only against custom `JsonHelper`
+instances still changes the resulting JSON.
+
+This worst case does not occur in Apollo. The accepted Sirius Web input has
+738 serialized many-valued non-containment lists (`Dependency.client` and
+`Dependency.supplier`, 369 each), all local and all of cardinality one. The
+current implementation therefore performs 738 classifications and 738 target
+visits; caching one classification per list removes no scan. In the scoped
+accepted-candidate JFR, `docKindMany` has no CPU sample and accounts for
+1,571,072 of 8,083,929,160 sampled allocation bytes (0.0194%, inclusive). The
+whole many-reference serializer accounts for 0.0453% inclusive. These sampled
+figures are estimates, but they rule this path out as a material Apollo hotspot.
+
+`SerializeManyReferencesTests.resourceFragmentCallbackCanChangeReferenceClassification`
+encodes this case with the default helper: the first target's fragment callback
+moves the second target, which must then use an external URI. The per-element
+classification was restored. Other tests retain coverage of custom helpers,
+mixed references, URI listeners, unresolved proxies and local ordering.
+The earlier linear-complexity assertion was removed because it prescribed the
+rejected implementation. Classifying targets independently, always writing
+HREFs, or assuming stable ownership would alter JSON or callback/listener
+semantics. A new explicit stable-ownership contract could enable a linear fast
+path for another workload, but is not justified by the Sirius Web target data.
+No retained runtime gain is attributed to this work.
+
+### Tree and callback constraints
+
+Both codec adapters implement Gson tree-based interfaces. On load,
+`GsonEObjectDeserializer.deserialize` passes the complete root `JsonObject`
+to `IJsonResourceProcessor.preDeserialization` before loading objects. On save,
+object handlers and serialization listeners receive complete object subtrees.
+`IJsonResourceProcessor.postSerialization` receives the mutable root after the
+`json` and `ns` members are attached, but before `schemaLocation` and `content`
+are added; processors can inspect or add root members at that point. A streaming
+replacement cannot discard these trees while preserving this contract and
+callback ordering.
+
+This rules out a blanket replacement of the current codec with a tree-free
+streaming implementation. It does not establish that every restricted
+streaming path is impossible or unprofitable. Such a path would need an
+explicit compatibility boundary, measured benefit with Sirius Web's actual
+processors, and tests for callback ordering and document migrations. There
+is no measured streaming gain in the retained implementation.
+
+Likewise, generic suppression of `IDManager.getOrCreateId`, `setId`, `findId`
+or `clearId` calls is not equivalent to caching manager selection. Managers
+can maintain adapters, indexes or other state. UUID allocation seen inside a
+particular manager cannot justify skipping these public extension callbacks
+for all managers. Changes to Sirius Web's manager would be a separate
+application contribution with its own measurements and lifecycle tests.
+
+## Attribution still required
+
+The final CPU/allocation breakdown must distinguish codec work from work
+called by the codec: reflective feature selection, ID/URI computation,
+containment/reference insertion, deferred-reference resolution, Gson tree
+construction/parsing, and character encoding/output. Report inclusive cost
+to locate expensive call paths and exclusive cost to identify implementations
+to change; overlapping inclusive percentages are not additive.
+
+JFR allocation samples locate allocation sources but do not replace measured
+bytes per operation. Temporary allocation, GC activity and memory retained
+after loading answer different questions and must not be presented as the
+same metric. Any category unsupported by the collected profiles remains
+unquantified, rather than receiving an inferred percentage from its apparent
+source-code complexity.
+
+## Acceptance
+
+For new acceptance comparisons, use one fresh JVM per variant, two warmups
+and ten measured iterations (`FORKS=1 WARMUP=2 ITERATIONS=10`). Keep all
+functional checks. Exploratory screening may use five measurements with the
+same one JVM and two warmups; it does not replace the ten-measurement run.
+
+This acceptance protocol deliberately limits execution cost and statistical
+confidence. Two warmups may not stabilize the JVM, and one JVM per variant
+does not quantify between-JVM variability. Report single-JVM observations;
+do not treat the ten iterations as independent JVM replicas or derive a
+cross-JVM confidence interval from them. Record each campaign's protocol and
+keep its results separate; historical tables retain their recorded protocols.
+
+Compare exact JSON bytes against the reference, validate persisted model
+structure and IDs after loading, run existing tests and targeted regressions.
+Check each retained optimization against the reference using this protocol
+and state the limits of its single-JVM evidence.
+Do not interpret a single profile or a noisy elapsed-time difference as a gain.
+Report codec improvements separately from application and PostgreSQL costs.
+
+Each optimization commit records its observed elapsed-time and allocation
+changes, the corpus, comparison boundary and measurement protocol. Mark
+single-fork screening results as provisional and inconclusive timing changes
+as such. Infrastructure and regression-only commits claim no runtime gain.
+
+This investigation cannot guarantee a mathematical global optimum or a
+tenfold improvement. Its defensible result is a reproducible set of measured
+changes, source-backed compatibility decisions and an explicit account of
+remaining costs and untested alternatives. Apollo's merged resource does not
+establish behavior or performance for all document fragmentation patterns,
+model depths, reference cardinalities, migrations or custom metamodels.
+Codec timings also do not establish PostgreSQL or end-to-end user latency.
+Those limits remain even if the corrected campaign reports a large gain.
