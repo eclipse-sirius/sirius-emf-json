@@ -526,7 +526,7 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
         IDManager idManager = this.getIdManager();
         if (idManager != null) {
             String previousId = idManager.setId(eObject, id);
-            if (previousId != null) {
+            if (previousId != null && !previousId.equals(id)) {
                 this.idToEObjectMap.remove(previousId);
             }
             this.idToEObjectMap.put(id, eObject);
