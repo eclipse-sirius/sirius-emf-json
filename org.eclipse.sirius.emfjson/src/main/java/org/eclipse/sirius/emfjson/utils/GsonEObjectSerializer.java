@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2025 Obeo.
+ * Copyright (c) 2020, 2026 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,6 +60,7 @@ import org.eclipse.emf.ecore.ETypedElement;
 import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl;
+import org.eclipse.emf.ecore.impl.EClassImpl;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.BasicExtendedMetaData;
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -114,6 +116,11 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      * The serialization options.
      */
     private Map<?, ?> options;
+
+    /**
+     * Next candidate indices for frozen standard EClasses, keyed by identity because each EClass owns its feature layout.
+     */
+    private final Map<EClass, int[]> nextCandidateFeatureIndices = new IdentityHashMap<>();
 
     /**
      * The support of extended meta data.
@@ -911,7 +918,22 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                     .collect(Collectors.toList());
         }
 
-        for (EStructuralFeature eStructuralFeature : eAllStructuralFeatures) {
+        int[] nextCandidateIndices = null;
+        // The cached indices assume standard, frozen metadata in its original feature order.
+        if (!(orderFeatures instanceof Comparator<?>) && eClass.getClass() == EClassImpl.class && ((EClassImpl) eClass).isFrozen()) {
+            nextCandidateIndices = this.nextCandidateFeatureIndices.computeIfAbsent(eClass, this::computeNextCandidateFeatureIndices);
+        }
+        // Keep iterator semantics for mutable/custom metadata; frozen indices can jump over excluded features.
+        Iterator<EStructuralFeature> uncachedFeatureIterator = nextCandidateIndices == null ? eAllStructuralFeatures.iterator() : null;
+        for (int featureIndex = 0; uncachedFeatureIterator != null ? uncachedFeatureIterator.hasNext() : featureIndex < eAllStructuralFeatures.size(); featureIndex++) {
+            if (nextCandidateIndices != null && this.canSkipTransientAndDerivedFeatures()) {
+                // Recheck options after each feature: child serialization callbacks can change them.
+                featureIndex = nextCandidateIndices[featureIndex];
+                if (featureIndex == eAllStructuralFeatures.size()) {
+                    break;
+                }
+            }
+            EStructuralFeature eStructuralFeature = uncachedFeatureIterator != null ? uncachedFeatureIterator.next() : eAllStructuralFeatures.get(featureIndex);
             if (this.shouldSerialize(eObject, eStructuralFeature)) {
                 JsonElement value = null;
                 if (eStructuralFeature instanceof EAttribute) {
@@ -932,6 +954,32 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         return properties;
     }
 
+    private boolean canSkipTransientAndDerivedFeatures() {
+        // A custom filter can include features excluded by the default rules.
+        return !Boolean.TRUE.equals(this.options.get(JsonResource.OPTION_SAVE_TRANSIENT_FEATURES))
+                && !Boolean.TRUE.equals(this.options.get(JsonResource.OPTION_SAVE_DERIVED_FEATURES))
+                && !(this.options.get(JsonResource.OPTION_ESTRUCTURAL_FEATURES_FILTER) instanceof EStructuralFeaturesFilter);
+    }
+
+    /**
+     * Builds a skip table in the EClass's original feature order. At each index, the next candidate
+     * is at or after that index; the feature count marks the end.
+     */
+    private int[] computeNextCandidateFeatureIndices(EClass eClass) {
+        List<EStructuralFeature> features = eClass.getEAllStructuralFeatures();
+        int[] nextCandidateIndices = new int[features.size()];
+        int nextCandidateIndex = features.size();
+        // Walking backwards makes each entry point to itself or the next feature that needs inspection.
+        for (int index = features.size() - 1; index >= 0; index--) {
+            EStructuralFeature feature = features.get(index);
+            if (!feature.isTransient() && !feature.isDerived()) {
+                nextCandidateIndex = index;
+            }
+            nextCandidateIndices[index] = nextCandidateIndex;
+        }
+        return nextCandidateIndices;
+    }
+
     /**
      * Determine if the structural feature should be serialized.
      *
@@ -945,20 +993,17 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         boolean shouldGenerate = true;
 
         // isTransient
-        Object saveTransientFeatures = this.options.get(JsonResource.OPTION_SAVE_TRANSIENT_FEATURES);
-        if (shouldGenerate && eStructuralFeature.isTransient() && !(saveTransientFeatures instanceof Boolean && ((Boolean) saveTransientFeatures).booleanValue())) {
+        if (eStructuralFeature.isTransient() && !Boolean.TRUE.equals(this.options.get(JsonResource.OPTION_SAVE_TRANSIENT_FEATURES))) {
             shouldGenerate = false;
         }
 
         // isDerived
-        Object saveDerivedFeatures = this.options.get(JsonResource.OPTION_SAVE_DERIVED_FEATURES);
-        if (shouldGenerate && eStructuralFeature.isDerived() && !(saveDerivedFeatures instanceof Boolean && ((Boolean) saveDerivedFeatures).booleanValue())) {
+        if (shouldGenerate && eStructuralFeature.isDerived() && !Boolean.TRUE.equals(this.options.get(JsonResource.OPTION_SAVE_DERIVED_FEATURES))) {
             shouldGenerate = false;
         }
 
         // EIsSet
-        Object saveUnsettedFeatures = this.options.get(JsonResource.OPTION_SAVE_UNSETTED_FEATURES);
-        if (shouldGenerate && !eObject.eIsSet(eStructuralFeature) && !(saveUnsettedFeatures instanceof Boolean && ((Boolean) saveUnsettedFeatures).booleanValue())) {
+        if (shouldGenerate && !eObject.eIsSet(eStructuralFeature) && !Boolean.TRUE.equals(this.options.get(JsonResource.OPTION_SAVE_UNSETTED_FEATURES))) {
             shouldGenerate = false;
         }
 
