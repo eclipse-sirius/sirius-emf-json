@@ -46,6 +46,7 @@ dedicated benchmark machine or justify disregarding uncertainty intervals.
 | Reference insertion or attachment dominates load | Five-fork load comparison below | Preserve uniqueness, opposites and notifications | Containment shortcut rejected: no convincing gain |
 | Avoiding untyped ID splitting reduces load allocation | Five-fork load comparison below | Preserve whitespace and processor ordering | Split shortcut rejected: no measured benefit over its base |
 | Per-write locking remains after character buffering | Cross-ordered 2+10 save comparisons and a post-change JFR | Preserve encoding, close/flush failures and resource-handler stream visibility | Accepted: save wall time fell by 17.3% in the final acceptance order; the reverse order observed 19.2% |
+| Default Gson arrays over-allocate short EMF reference lists | Cross-ordered 2+10 save comparisons | Preserve list traversal and callback order; use capacity only | Accepted: allocation fell by 1.93% in the final order and 1.10% in reverse order |
 | Gson tree construction dominates remaining allocations | Allocation profiles after simpler changes | Existing callbacks accept complete JSON trees | Pending |
 
 ## Five-fork phase measurements
@@ -184,6 +185,23 @@ Gson tree construction/emission and EMF feature access. The complete Maven
 verification passes 528 tests, including byte-exact UTF-8/UTF-16LE, indentation,
 flush-failure and resource-handler boundary checks.
 
+### Pre-sized reference arrays
+
+The Apollo JSON contains 93,452 arrays; 69,253 contain one element and 93,290
+contain at most ten. Gson's default `JsonArray` backing list grows to capacity
+ten on its first addition. The candidate supplies known top-level and EMF
+reference-list sizes to `JsonArray` while retaining the same iteration and
+element callbacks.
+
+The final one-JVM, two-warmup, ten-measurement acceptance order observed save
+wall time fall from 240.771 ms to 234.573 ms (-2.57%), CPU from 239.122 ms to
+232.700 ms (-2.69%), and allocation from 269,498,272 to 264,304,168 bytes
+(-1.93%). In reverse order, wall and CPU fell by 1.29% and allocation from
+269,498,272 to 266,521,064 bytes (-1.10%). An earlier five-measurement screening
+had noisier timing in the opposite direction, so the small timing improvement
+is not presented as established beyond these two single-JVM acceptance runs.
+The allocation reduction was observed in all three orders.
+
 ## Compatibility ledger
 
 The following are source-level reasons for retaining each candidate, separate
@@ -193,6 +211,7 @@ from the performance measurements needed to accept its claimed benefit.
 | --- | --- | --- |
 | Buffered JSON character output | `JsonResourceImpl.doSave` buffers only without a resource handler. With a handler, `postSave` still sees the original unflushed stream boundary. Encoding, indentation, HTML escaping and writer closure stay unchanged. | `JsonWriterTests`: exact Unicode bytes in UTF-8/UTF-16LE, indentation, handler-visible byte count and final-flush failure propagation |
 | Unsynchronized private writer | The writer is private, created and consumed within one `doSave` call. It keeps the same 8 KiB capacity and delegates encoding, flushing and closing to `OutputStreamWriter`. A try-with-resources closes the delegate even if the final buffered write fails. The resource-handler path is unchanged. | The same `JsonWriterTests` plus the complete 528-test verification; the Apollo harness checks byte identity and round-trip structure |
+| Pre-sized reference arrays | Only the initial backing-list capacity changes. Known `List`, `Collection` and `InternalEList` sizes are read once; element order, iteration, serialization and callbacks are unchanged. Unknown iterable sizes retain zero initial capacity. | Apollo byte identity and round-trip checks in both acceptance orders; complete Maven verification |
 | Repeated ID assignment | `JsonResourceImpl.setID` still calls `IDManager.setId` and puts the new mapping on every assignment. It only avoids removing a key immediately before replacing the same key. A changed ID still removes its previous entry. | `RepeatedIDTests`: callback counts, equal but distinct ID strings, reassignment and detach |
 | Frozen feature skip indices | `GsonEObjectSerializer.serializeEAllStructuralFeatures` caches only frozen metadata of the exact `EClassImpl` class within that serializer. Other implementations retain iterator traversal, avoiding indexed traversal of custom sequential lists. Custom ordering retains the full ordered feature list. Each iteration rechecks transient/derived options and the feature filter, including after child callbacks; filters can still force excluded features. | `FrozenFeaturesSerializationTests`: exact output, explicit options, filter/comparator calls, custom-list iteration, mutable metadata and child callbacks changing remaining parent options |
 
