@@ -31,10 +31,12 @@ import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.EcoreFactory;
 import org.eclipse.emf.ecore.EcorePackage;
+import org.eclipse.emf.ecore.impl.EAttributeImpl;
 import org.eclipse.emf.ecore.impl.EClassImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.sirius.emfjson.resource.JsonResource;
@@ -67,6 +69,79 @@ public class FrozenFeaturesSerializationTests {
             assertThat(serializedObject.asMap()).containsEntry("persistentValue", new JsonPrimitive("persistentValue"));
             assertThat(indexedFeatureReadCount.get()).as("indexed reads with frozen metamodel=%s", freezeMetamodel).isZero();
         }
+    }
+
+    @Test
+    public void customAttributeTypeIsReadForEachObjectEvenWhenItsEClassIsFrozen() {
+        var attributeTypeReadCount = new AtomicInteger();
+        var nodeEClass = this.createNodeEClass();
+        var customAttribute = new EAttributeImpl() {
+            @Override
+            public EClassifier getEType() {
+                attributeTypeReadCount.incrementAndGet();
+                return super.getEType();
+            }
+        };
+        customAttribute.setName("custom");
+        customAttribute.setEType(EcorePackage.Literals.ESTRING);
+        nodeEClass.getEStructuralFeatures().add(customAttribute);
+        EObject firstObject = this.createObjectWithAttributeNames(nodeEClass);
+        EObject secondObject = this.createObjectWithAttributeNames(nodeEClass);
+        EcoreUtil.freeze(nodeEClass.getEPackage());
+        attributeTypeReadCount.set(0);
+        var typeReadCountsAfterEachObject = new ArrayList<Integer>();
+        var listener = new JsonResource.ISerializationListener.NoOp() {
+            @Override
+            public void onObjectSerialized(EObject object, JsonElement json) {
+                typeReadCountsAfterEachObject.add(attributeTypeReadCount.get());
+            }
+        };
+
+        JsonObject serializedResource = this.serializeObjects(
+                Map.of(JsonResource.OPTION_SERIALIZATION_LISTENER, listener), firstObject, secondObject);
+
+        assertThat(this.rootData(serializedResource, 0).asMap()).containsEntry("custom", new JsonPrimitive("custom"));
+        assertThat(this.rootData(serializedResource, 1).asMap()).containsEntry("custom", new JsonPrimitive("custom"));
+        assertThat(typeReadCountsAfterEachObject).as("cumulative custom getEType() calls after each object").containsExactly(1, 2);
+    }
+
+    @Test
+    public void frozenSubclassObservesInheritedTransientFlagChangesBetweenObjects() {
+        var basePackage = EcoreFactory.eINSTANCE.createEPackage();
+        basePackage.setName("base");
+        basePackage.setNsPrefix("base");
+        basePackage.setNsURI("urn:base");
+        var baseEClass = EcoreFactory.eINSTANCE.createEClass();
+        baseEClass.setName("Base");
+        basePackage.getEClassifiers().add(baseEClass);
+        var inheritedAttribute = EcoreFactory.eINSTANCE.createEAttribute();
+        inheritedAttribute.setName("inherited");
+        inheritedAttribute.setEType(EcorePackage.Literals.ESTRING);
+        inheritedAttribute.setTransient(true);
+        baseEClass.getEStructuralFeatures().add(inheritedAttribute);
+
+        EClass nodeEClass = this.createNodeEClass();
+        nodeEClass.getESuperTypes().add(baseEClass);
+        EObject firstObject = this.createObjectWithAttributeNames(nodeEClass);
+        EObject secondObject = this.createObjectWithAttributeNames(nodeEClass);
+        firstObject.eSet(inheritedAttribute, "first");
+        secondObject.eSet(inheritedAttribute, "second");
+        EcoreUtil.freeze(nodeEClass.getEPackage());
+        assertThat(((EClassImpl) nodeEClass).isFrozen()).isTrue();
+        assertThat(((EClassImpl) baseEClass).isFrozen()).isFalse();
+        var options = Map.of(JsonResource.OPTION_SERIALIZATION_LISTENER, new JsonResource.ISerializationListener.NoOp() {
+            @Override
+            public void onObjectSerialized(EObject object, JsonElement json) {
+                if (object == firstObject) {
+                    inheritedAttribute.setTransient(false);
+                }
+            }
+        });
+
+        JsonObject serializedResource = this.serializeObjects(options, firstObject, secondObject);
+
+        assertThat(this.rootData(serializedResource, 0).keySet()).doesNotContain("inherited");
+        assertThat(this.rootData(serializedResource, 1).asMap()).containsEntry("inherited", new JsonPrimitive("second"));
     }
 
     @Test

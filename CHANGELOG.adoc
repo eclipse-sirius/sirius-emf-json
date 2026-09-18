@@ -25,9 +25,8 @@ None.
 - Reduce JSON save allocations by buffering character encoding when no resource handler observes the output stream.
 - Reduce JSON save time by avoiding per-write synchronization in the private character buffer.
 - Reduce JSON save allocations by pre-sizing arrays from known reference-list sizes.
-- Add isolated codec-phase diagnostics and campaign-aware CPU/allocation profile analysis.
-- Reduce allocations when assigning an unchanged object ID while preserving ID manager callbacks.
 - Reduce save overhead for excluded features of frozen EClasses while preserving dynamic options and custom metadata behavior.
+- Reduce save dispatch overhead with session-scoped plans for frozen standard EClass features.
 
 
 == v2.5.4
