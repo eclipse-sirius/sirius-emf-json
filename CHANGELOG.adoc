@@ -27,6 +27,7 @@ None.
 - Reduce JSON save allocations by pre-sizing arrays from known reference-list sizes.
 - Reduce save overhead for excluded features of frozen EClasses while preserving dynamic options and custom metadata behavior.
 - Reduce save dispatch overhead with session-scoped plans for frozen standard EClass features.
+- Add `JsonResource.loadFromString` to avoid an intermediate UTF-8 byte array.
 
 
 == v2.5.4

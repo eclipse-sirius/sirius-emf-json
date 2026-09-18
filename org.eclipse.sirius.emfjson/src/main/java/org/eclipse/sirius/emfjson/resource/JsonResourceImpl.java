@@ -21,12 +21,14 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Arrays;
@@ -51,6 +53,49 @@ import org.eclipse.sirius.emfjson.utils.GsonEObjectSerializer;
 public class JsonResourceImpl extends ResourceImpl implements JsonResource {
 
     /**
+     * Passes characters through the ResourceImpl load lifecycle, encoding them only if a subclass reads bytes.
+     * Direct character access is safe only before byte access, which may consume part of the input.
+     */
+    private static final class LazyEncodingInputStream extends InputStream {
+
+        private final String content;
+
+        private final String encoding;
+
+        private ByteArrayInputStream encodedInputStream;
+
+        LazyEncodingInputStream(String content, String encoding) {
+            this.content = content;
+            this.encoding = encoding;
+        }
+
+        @Override
+        public int read() throws IOException {
+            return this.getOrCreateEncodedStream().read();
+        }
+
+        @Override
+        public int read(byte[] bytes, int offset, int length) throws IOException {
+            return this.getOrCreateEncodedStream().read(bytes, offset, length);
+        }
+
+        StringReader openCharacterReader() {
+            return new StringReader(this.content);
+        }
+
+        boolean canReadCharactersDirectly() {
+            return this.encodedInputStream == null;
+        }
+
+        private ByteArrayInputStream getOrCreateEncodedStream() throws UnsupportedEncodingException {
+            if (this.encodedInputStream == null) {
+                this.encodedInputStream = new ByteArrayInputStream(this.content.getBytes(this.encoding));
+            }
+            return this.encodedInputStream;
+        }
+    }
+
+    /**
      * The map from id to {@link EObject}. It is used to store IDs when {@link IDManager} are used to handle id when an
      * object is added.
      */
@@ -67,6 +112,39 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
     private boolean useID;
 
     private boolean useIDAsURIFragment;
+
+    @Override
+    public void loadFromString(String content, Map<?, ?> options) throws IOException {
+        if (this.isLoaded()) {
+            return;
+        }
+        Objects.requireNonNull(content);
+
+        // Match the option precedence of ResourceImpl.load followed by doLoad.
+        Map<Object, Object> effectiveLoadOptions = new HashMap<>(this.resourceOptions);
+        if (this.defaultLoadOptions != null) {
+            effectiveLoadOptions.putAll(this.defaultLoadOptions);
+        }
+        if (options != null) {
+            effectiveLoadOptions.putAll(options);
+        }
+
+        Object encoding = effectiveLoadOptions.get(JsonResource.OPTION_ENCODING);
+        if (encoding == null) {
+            encoding = JsonResource.ENCODING_UTF_8;
+        }
+
+        // Handlers require the ordinary byte stream, including its availability and consumption semantics.
+        if (effectiveLoadOptions.get(JsonResource.OPTION_RESOURCE_HANDLER) != null) {
+            try (var inputStream = new ByteArrayInputStream(content.getBytes(encoding.toString()))) {
+                this.load(inputStream, options);
+            }
+        } else {
+            try (var inputStream = new LazyEncodingInputStream(content, encoding.toString())) {
+                this.load(inputStream, options);
+            }
+        }
+    }
 
     /**
      * The constructor. <br/>
@@ -318,7 +396,11 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
         JsonReader reader = null;
 
         try {
-            reader = new JsonReader(new InputStreamReader(inputStream, encoding.toString()));
+            if (inputStream instanceof LazyEncodingInputStream stringInputStream && stringInputStream.canReadCharactersDirectly()) {
+                reader = new JsonReader(stringInputStream.openCharacterReader());
+            } else {
+                reader = new JsonReader(new InputStreamReader(inputStream, encoding.toString()));
+            }
 
             gson.fromJson(reader, typeToken.getType());
 
