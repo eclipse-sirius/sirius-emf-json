@@ -47,7 +47,7 @@ dedicated benchmark machine or justify disregarding uncertainty intervals.
 | Avoiding untyped ID splitting reduces load allocation | Five-fork load comparison below | Preserve whitespace and processor ordering | Split shortcut rejected: no measured benefit over its base |
 | Per-write locking remains after character buffering | Cross-ordered 2+10 save comparisons and a post-change JFR | Preserve encoding, close/flush failures and resource-handler stream visibility | Accepted: save wall time fell by 17.3% in the final acceptance order; the reverse order observed 19.2% |
 | Default Gson arrays over-allocate short EMF reference lists | Cross-ordered 2+10 save comparisons | Preserve list traversal and callback order; use capacity only | Accepted: allocation fell by 1.93% in the final order and 1.10% in reverse order |
-| Gson tree construction dominates remaining allocations | Allocation profiles after simpler changes | Existing callbacks accept complete JSON trees | Pending |
+| Gson tree construction dominates remaining allocations | Allocation profiles and cross-ordered streaming comparisons | Existing callbacks accept complete JSON trees | Accepted opt-in mode: about 32% fewer allocated bytes; default contract unchanged |
 | EMF binary serialization provides an order-of-magnitude reference | Cross-ordered 2+10 codec comparisons | Compare equivalent persistent state and extrinsic IDs, not format compatibility | Binary was 25–27% slower, allocated 60.8% less and produced 47.7% fewer bytes than optimized JSON |
 
 ## Five-fork phase measurements
@@ -274,6 +274,24 @@ Artifacts: `target/performance/streaming-scalars-acceptance` and `-reversed`.
 Absolute allocation levels vary with JVM optimization, as in earlier runs;
 do not multiply improvements measured in independent campaigns.
 
+The final same-revision mode comparison (`streaming-final-acceptance`, again
+1 JVM per mode, 2 warmups, 10 measurements) observed:
+
+| Mode | Wall ms | CPU ms | Allocated bytes |
+| --- | ---: | ---: | ---: |
+| Default tree | 228.509 | 227.112 | 266,537,224 |
+| Final streaming | 192.946 | 192.375 | 180,059,304 |
+
+This is 86,477,920 fewer allocated bytes per save (-32.44%), -15.56% wall and
+-15.29% CPU in this campaign. The ordinary JSON SHA-256 still matches the
+pre-streaming revision; streaming JSON-tree equality and reload validation pass.
+These codec results do not include PostgreSQL or complete document saves.
+
+A preliminary cache of immutable class-name/boolean primitives was not retained.
+Its observed allocation change ranged from -0.025% to -0.856%, affected by
+the already observed JVM allocation regimes. Streaming removes class-name
+wrappers entirely, without an additional primitive cache.
+
 ### Optimized JSON versus EMF binary serialization
 
 The diagnostic uses `XMIResourceImpl` with `XMLResource.OPTION_BINARY` and the
@@ -392,11 +410,11 @@ replacement cannot discard these trees while preserving this contract and
 callback ordering.
 
 This rules out a blanket replacement of the current codec with a tree-free
-streaming implementation. It does not establish that every restricted
-streaming path is impossible or unprofitable. Such a path would need an
-explicit compatibility boundary, measured benefit with Sirius Web's actual
-processors, and tests for callback ordering and document migrations. There
-is no measured streaming gain in the retained implementation.
+streaming implementation. The optional path measured above has an explicit
+compatibility boundary: it skips object-tree callbacks, retains header
+processors, and rejects unsupported helper options. Its codec benefits do not
+establish compatibility with arbitrary Sirius Web migration participants;
+application adoption and integration measurements remain separate work.
 
 Likewise, generic suppression of `IDManager.getOrCreateId`, `setId`, `findId`
 or `clearId` calls is not equivalent to caching manager selection. Managers
