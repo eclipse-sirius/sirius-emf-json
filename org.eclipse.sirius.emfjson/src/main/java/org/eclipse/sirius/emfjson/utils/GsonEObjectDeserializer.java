@@ -141,6 +141,8 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
 
     private final Map<String, EClass> typeCache = new HashMap<>();
 
+    private final Map<String, String[]> eClassNames = new HashMap<>();
+
     /**
      * The constructor.
      *
@@ -1077,16 +1079,20 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     private EClassifier getEClass(JsonObject object, JsonElement eClassJsonElement) {
         String jsonEClass = eClassJsonElement.getAsString();
 
-        String nsPrefix = jsonEClass;
-        String className = jsonEClass;
-
-        int index = jsonEClass.indexOf(':');
-        if (index > 0) {
-            nsPrefix = jsonEClass.substring(0, index);
-            className = jsonEClass.substring(index + 1, jsonEClass.length());
+        String[] names = this.eClassNames.get(jsonEClass);
+        if (names == null) {
+            String nsPrefix = jsonEClass;
+            String className = jsonEClass;
+            int index = jsonEClass.indexOf(':');
+            if (index > 0) {
+                nsPrefix = jsonEClass.substring(0, index);
+                className = jsonEClass.substring(index + 1, jsonEClass.length());
+            }
+            names = new String[] { nsPrefix, className };
+            this.eClassNames.put(jsonEClass, names);
         }
 
-        String nsUri = this.prefixToNsURi.get(nsPrefix);
+        String nsUri = this.prefixToNsURi.get(names[0]);
 
         EPackage ePackage = null;
         if (this.resourceSet != null) {
@@ -1098,7 +1104,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
         }
 
         if (ePackage != null) {
-            return ePackage.getEClassifier(className);
+            return ePackage.getEClassifier(names[1]);
         }
 
         return null;

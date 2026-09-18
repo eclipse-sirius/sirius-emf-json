@@ -117,6 +117,29 @@ no confirmed timing benefit and no allocation improvement over I1. The
 cached field was removed; each lookup continues to select the manager as
 before. No runtime benefit is claimed for that rejected experiment.
 
+### Repeated EClass lexical components
+
+Apollo contains 138,556 `eClass` values but only 131 distinct lexical class
+names. The loader now caches only each name's namespace prefix and local class
+name for the duration of one load. It still queries the package registry and
+resolves the EClassifier for every EObject, so handler-driven registry changes
+remain observable.
+
+Two cross-ordered comparisons used one fresh JVM per variant, two warmups and
+ten measurements:
+
+| Order | Variant | Wall ms | CPU ms | Allocated bytes |
+| --- | --- | ---: | ---: | ---: |
+| Previous then cache | Previous | 436.896 | 385.122 | 412,899,092 |
+| Previous then cache | Cache | 452.168 | 389.383 | 398,206,320 |
+| Cache then previous | Previous | 453.284 | 390.106 | 412,833,816 |
+| Cache then previous | Cache | 450.603 | 391.606 | 398,206,320 |
+
+Allocation fell by 14.63–14.69 MB per load, or 3.54–3.56%. Wall time changed
+by +3.50% and -0.59%; CPU changed by +1.11% and +0.38%, so no timing gain is
+claimed. Model/ID validation and package-registry mutation tests passed. These
+are single-JVM codec observations without a between-JVM confidence interval.
+
 The accepted source consists of buffering, the repeated-ID map guard, and
 frozen-feature skipping with the exact-class guard and iterator fallback.
 `accepted-save` compares R0, buffer plus I1 without feature skipping, and

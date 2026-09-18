@@ -20,6 +20,7 @@
 - Reduce save dispatch overhead with session-scoped plans for frozen standard EClass features.
 - Add opt-in streaming JSON saves to reduce allocations when object-tree callbacks are not needed.
 - Avoid temporary JSON primitives for single-valued strings, booleans and numbers in streaming saves.
+- Reuse parsed class-name components while loading repeated EObject types.
 
 === Architectural decision records
 
