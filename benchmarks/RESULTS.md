@@ -42,7 +42,7 @@ dedicated benchmark machine or justify disregarding uncertainty intervals.
 | --- | --- | --- | --- |
 | Repeated classification of a reference list is quadratic | Growing-list counts confirm quadratic work, but Apollo has 738 such lists and every one is a singleton; scoped JFR attributes no CPU sample and 0.0194% of sampled allocations to `docKindMany` | Resource fragment and ID-manager callbacks can change reference ownership between elements | No change: there is no repeated scan on the target corpus, and a generic cache changes observable callback behavior |
 | Unbuffered JSON character writes allocate temporary arrays | Five-fork save comparison and final one-fork comparison below; `StreamEncoder` CPU/allocation stacks | Preserve stream visibility for resource handlers | Large measured allocation reduction |
-| Repeated metadata and ID lookup costs dominate remaining work | Post-optimization CPU/allocation profiles | No stale caches or changed extension calls | Pending |
+| Repeated feature dispatch costs remain after excluded-feature skipping | Cross-ordered 2+10 save comparisons | Cache only frozen standard declaring classes; preserve custom metadata and callbacks | Accepted: three final comparisons observed 0.28–7.39% lower save wall time and 0.42–9.91% lower CPU |
 | Reference insertion or attachment dominates load | Five-fork load comparison below | Preserve uniqueness, opposites and notifications | Containment shortcut rejected: no convincing gain |
 | Avoiding untyped ID splitting reduces load allocation | Five-fork load comparison below | Preserve whitespace and processor ordering | Split shortcut rejected: no measured benefit over its base |
 | Per-write locking remains after character buffering | Cross-ordered 2+10 save comparisons and a post-change JFR | Preserve encoding, close/flush failures and resource-handler stream visibility | Accepted: save wall time fell by 17.3% in the final acceptance order; the reverse order observed 19.2% |
@@ -202,6 +202,36 @@ had noisier timing in the opposite direction, so the small timing improvement
 is not presented as established beyond these two single-JVM acceptance runs.
 The allocation reduction was observed in all three orders.
 
+### Frozen feature serialization plans
+
+The earlier frozen-feature cache only skipped transient and derived features.
+The expanded session-scoped plan also classifies standard attributes lazily by
+value family and references by cardinality and containment. The hot loop dispatches
+directly to the existing serialization methods; feature filtering, value access,
+QName computation, recursive traversal and callbacks are unchanged. Lazy attribute
+classification retains the previous timing of `getEType`, including proxy
+resolution. Classification is restricted to exact standard features whose
+declaring `EClassImpl` is frozen. Inherited features from mutable external
+supertypes and custom feature classes retain generic dispatch.
+
+The final acceptance comparisons used one fresh JVM per variant, two warmups and
+ten measurements on the 138,556-object Apollo corpus:
+
+| Order | Previous wall ms | Plan wall ms | Previous CPU ms | Plan CPU ms |
+| --- | ---: | ---: | ---: | ---: |
+| Previous then plan | 234.042 | 233.392 (-0.28%) | 233.526 | 232.557 (-0.42%) |
+| Plan then previous | 242.264 | 236.592 (-2.34%) | 240.957 | 236.512 (-1.84%) |
+| Confirmation | 245.869 | 227.710 (-7.39%) | 245.835 | 221.465 (-9.91%) |
+
+The cross-ordered final runs observed allocation fall by 0.83%, from approximately
+266,521,000 to 264,320,000 bytes, while confirmation observed a 15,812-byte
+increase (0.006%). The two modes differ by approximately 2,216,900 bytes, or
+16 bytes for each Apollo EObject, suggesting but not proving a JVM optimization
+regime. No robust allocation reduction is therefore attributed to the plan.
+Every run produced the same 25,347,610 JSON bytes and passed model validation.
+These remain separate single-JVM observations without a between-JVM confidence
+interval; the 0.28% result in particular is within ordinary run-to-run noise.
+
 ## Compatibility ledger
 
 The following are source-level reasons for retaining each candidate, separate
@@ -213,7 +243,7 @@ from the performance measurements needed to accept its claimed benefit.
 | Unsynchronized private writer | The writer is private, created and consumed within one `doSave` call. It keeps the same 8 KiB capacity and delegates encoding, flushing and closing to `OutputStreamWriter`. A try-with-resources closes the delegate even if the final buffered write fails. The resource-handler path is unchanged. | The same `JsonWriterTests` plus the complete 528-test verification; the Apollo harness checks byte identity and round-trip structure |
 | Pre-sized reference arrays | Only the initial backing-list capacity changes. Known `List`, `Collection` and `InternalEList` sizes are read once; element order, iteration, serialization and callbacks are unchanged. Unknown iterable sizes retain zero initial capacity. | Apollo byte identity and round-trip checks in both acceptance orders; complete Maven verification |
 | Repeated ID assignment | `JsonResourceImpl.setID` still calls `IDManager.setId` and puts the new mapping on every assignment. It only avoids removing a key immediately before replacing the same key. A changed ID still removes its previous entry. | `RepeatedIDTests`: callback counts, equal but distinct ID strings, reassignment and detach |
-| Frozen feature skip indices | `GsonEObjectSerializer.serializeEAllStructuralFeatures` caches only frozen metadata of the exact `EClassImpl` class within that serializer. Other implementations retain iterator traversal, avoiding indexed traversal of custom sequential lists. Custom ordering retains the full ordered feature list. Each iteration rechecks transient/derived options and the feature filter, including after child callbacks; filters can still force excluded features. | `FrozenFeaturesSerializationTests`: exact output, explicit options, filter/comparator calls, custom-list iteration, mutable metadata and child callbacks changing remaining parent options |
+| Frozen feature serialization plan | `GsonEObjectSerializer.serializeEAllStructuralFeatures` caches only metadata declared by exact frozen `EClassImpl` classes within that serializer. Other implementations retain iterator traversal and generic dispatch. Custom ordering retains the full ordered feature list. Each iteration rechecks transient/derived options and the feature filter, including after child callbacks; filters can still force excluded features. Mutable inherited and custom features remain observable. | `FrozenFeaturesSerializationTests`: exact output, explicit options, filter/comparator calls, custom-list iteration, mutable metadata, custom feature access, mutable external superclasses and child callbacks changing remaining parent options |
 
 Frozen metadata is subject to EMF's contract that a frozen model must not be
 modified; freezing does not make all Java setters physically immutable.

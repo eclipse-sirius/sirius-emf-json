@@ -15,7 +15,7 @@
 - Add isolated codec-phase diagnostics and campaign-aware CPU/allocation profile analysis.
 - Reduce allocations when assigning an unchanged object ID while preserving ID manager callbacks.
 - Reduce save overhead for excluded features of frozen EClasses while preserving dynamic options and custom metadata behavior.
-- Reduce allocations when assigning an unchanged object ID while preserving ID manager callbacks.
+- Reduce save dispatch overhead with session-scoped plans for frozen standard EClass features.
 
 
 == v2.5.4

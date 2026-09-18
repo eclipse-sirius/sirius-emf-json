@@ -60,7 +60,9 @@ import org.eclipse.emf.ecore.ETypedElement;
 import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl;
+import org.eclipse.emf.ecore.impl.EAttributeImpl;
 import org.eclipse.emf.ecore.impl.EClassImpl;
+import org.eclipse.emf.ecore.impl.EReferenceImpl;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.BasicExtendedMetaData;
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -97,6 +99,32 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      */
     private static final int CROSS_DOC = 2;
 
+    private static final byte UNKNOWN_FEATURE = 0;
+
+    private static final byte UNCLASSIFIED_ATTRIBUTE = 1;
+
+    private static final byte STRING_ATTRIBUTE = 2;
+
+    private static final byte BOOLEAN_ATTRIBUTE = 3;
+
+    private static final byte NUMBER_ATTRIBUTE = 4;
+
+    private static final byte BYTE_ARRAY_ATTRIBUTE = 5;
+
+    private static final byte DATE_ATTRIBUTE = 6;
+
+    private static final byte ENUM_ATTRIBUTE = 7;
+
+    private static final byte DATA_TYPE_ATTRIBUTE = 8;
+
+    private static final byte SINGLE_CONTAINMENT = 9;
+
+    private static final byte MULTIPLE_CONTAINMENT = 10;
+
+    private static final byte SINGLE_REFERENCE = 11;
+
+    private static final byte MULTIPLE_REFERENCE = 12;
+
     /**
      * Hexadecimal digits.
      */
@@ -118,9 +146,20 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
     private Map<?, ?> options;
 
     /**
-     * Next non-transient, non-derived feature indices, for immutable metamodels only.
+     * Feature selection and dispatch plans, for immutable metamodels only.
      */
-    private final Map<EClass, int[]> persistentFeatureIndices = new IdentityHashMap<>();
+    private final Map<EClass, SerializationPlan> serializationPlans = new IdentityHashMap<>();
+
+    private static class SerializationPlan {
+        private final int[] persistentFeatureIndices;
+
+        private final byte[] featureKinds;
+
+        private SerializationPlan(int[] persistentFeatureIndices, byte[] featureKinds) {
+            this.persistentFeatureIndices = persistentFeatureIndices;
+            this.featureKinds = featureKinds;
+        }
+    }
 
     /**
      * The support of extended meta data.
@@ -918,31 +957,29 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                     .collect(Collectors.toList());
         }
 
-        int[] nextFeatures = null;
+        SerializationPlan serializationPlan = null;
         if (!(orderFeatures instanceof Comparator<?>) && eClass.getClass() == EClassImpl.class && ((EClassImpl) eClass).isFrozen()) {
-            nextFeatures = this.persistentFeatureIndices.computeIfAbsent(eClass, this::computePersistentFeatureIndices);
+            serializationPlan = this.serializationPlans.computeIfAbsent(eClass, this::computeSerializationPlan);
         }
-        Iterator<EStructuralFeature> featureIterator = nextFeatures == null ? eAllStructuralFeatures.iterator() : null;
+        Iterator<EStructuralFeature> featureIterator = serializationPlan == null ? eAllStructuralFeatures.iterator() : null;
         for (int index = 0; featureIterator != null ? featureIterator.hasNext() : index < eAllStructuralFeatures.size(); index++) {
-            if (nextFeatures != null && !Boolean.TRUE.equals(this.options.get(JsonResource.OPTION_SAVE_TRANSIENT_FEATURES))
+            if (serializationPlan != null && !Boolean.TRUE.equals(this.options.get(JsonResource.OPTION_SAVE_TRANSIENT_FEATURES))
                     && !Boolean.TRUE.equals(this.options.get(JsonResource.OPTION_SAVE_DERIVED_FEATURES))
                     && !(this.options.get(JsonResource.OPTION_ESTRUCTURAL_FEATURES_FILTER) instanceof EStructuralFeaturesFilter)) {
                 // Recheck options after each feature: child serialization callbacks can change them.
-                index = nextFeatures[index];
+                index = serializationPlan.persistentFeatureIndices[index];
                 if (index == eAllStructuralFeatures.size()) {
                     break;
                 }
             }
             EStructuralFeature eStructuralFeature = featureIterator != null ? featureIterator.next() : eAllStructuralFeatures.get(index);
             if (this.shouldSerialize(eObject, eStructuralFeature)) {
-                JsonElement value = null;
-                if (eStructuralFeature instanceof EAttribute) {
-                    EAttribute eAttribute = (EAttribute) eStructuralFeature;
-                    value = this.serializeEAttribute(eObject, eAttribute);
-                } else if (eStructuralFeature instanceof EReference) {
-                    EReference eReference = (EReference) eStructuralFeature;
-                    value = this.serializeEReference(eObject, eReference);
+                byte featureKind = serializationPlan == null ? UNKNOWN_FEATURE : serializationPlan.featureKinds[index];
+                if (featureKind == UNCLASSIFIED_ATTRIBUTE) {
+                    featureKind = this.classifyAttribute((EAttribute) eStructuralFeature);
+                    serializationPlan.featureKinds[index] = featureKind;
                 }
+                JsonElement value = this.serializeFeature(eObject, eStructuralFeature, featureKind);
 
                 if (value != null) {
                     String featureName = this.helper.getQName(eStructuralFeature);
@@ -954,18 +991,92 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         return properties;
     }
 
-    private int[] computePersistentFeatureIndices(EClass eClass) {
+    private SerializationPlan computeSerializationPlan(EClass eClass) {
         List<EStructuralFeature> features = eClass.getEAllStructuralFeatures();
         int[] indices = new int[features.size()];
+        byte[] featureKinds = new byte[features.size()];
         int next = features.size();
         for (int index = features.size() - 1; index >= 0; index--) {
             EStructuralFeature feature = features.get(index);
-            if (!feature.isTransient() && !feature.isDerived()) {
+            boolean frozenStandardMetadata = feature.getEContainingClass().getClass() == EClassImpl.class
+                    && ((EClassImpl) feature.getEContainingClass()).isFrozen();
+            if (frozenStandardMetadata) {
+                featureKinds[index] = this.classifyFeature(feature);
+            }
+            if (!frozenStandardMetadata || !feature.isTransient() && !feature.isDerived()) {
                 next = index;
             }
             indices[index] = next;
         }
-        return indices;
+        return new SerializationPlan(indices, featureKinds);
+    }
+
+    private byte classifyFeature(EStructuralFeature feature) {
+        byte featureKind = UNKNOWN_FEATURE;
+        if (feature.getClass() == EAttributeImpl.class) {
+            featureKind = UNCLASSIFIED_ATTRIBUTE;
+        } else if (feature.getClass() == EReferenceImpl.class) {
+            EReference reference = (EReference) feature;
+            if (reference.isContainment()) {
+                featureKind = reference.isMany() ? MULTIPLE_CONTAINMENT : SINGLE_CONTAINMENT;
+            } else {
+                featureKind = reference.isMany() ? MULTIPLE_REFERENCE : SINGLE_REFERENCE;
+            }
+        }
+        return featureKind;
+    }
+
+    private byte classifyAttribute(EAttribute attribute) {
+        byte featureKind = UNKNOWN_FEATURE;
+        EClassifier type = attribute.getEType();
+        if (EcorePackage.eINSTANCE.getEString().equals(type) || EcorePackage.eINSTANCE.getEChar().equals(type)
+                || EcorePackage.eINSTANCE.getECharacterObject().equals(type)) {
+            featureKind = STRING_ATTRIBUTE;
+        } else if (EcorePackage.eINSTANCE.getEBoolean().equals(type) || EcorePackage.eINSTANCE.getEBooleanObject().equals(type)) {
+            featureKind = BOOLEAN_ATTRIBUTE;
+        } else if (EcorePackage.eINSTANCE.getEInt().equals(type) || EcorePackage.eINSTANCE.getEIntegerObject().equals(type)
+                || EcorePackage.eINSTANCE.getEBigDecimal().equals(type) || EcorePackage.eINSTANCE.getEBigInteger().equals(type)
+                || EcorePackage.eINSTANCE.getEByte().equals(type) || EcorePackage.eINSTANCE.getEByteObject().equals(type)
+                || EcorePackage.eINSTANCE.getEDouble().equals(type) || EcorePackage.eINSTANCE.getEDoubleObject().equals(type)
+                || EcorePackage.eINSTANCE.getEFloat().equals(type) || EcorePackage.eINSTANCE.getEFloatObject().equals(type)
+                || EcorePackage.eINSTANCE.getELong().equals(type) || EcorePackage.eINSTANCE.getELongObject().equals(type)
+                || EcorePackage.eINSTANCE.getEShort().equals(type) || EcorePackage.eINSTANCE.getEShortObject().equals(type)) {
+            featureKind = NUMBER_ATTRIBUTE;
+        } else if (EcorePackage.eINSTANCE.getEByteArray().equals(type)) {
+            featureKind = BYTE_ARRAY_ATTRIBUTE;
+        } else if (EcorePackage.eINSTANCE.getEDate().equals(type)) {
+            featureKind = DATE_ATTRIBUTE;
+        } else if (type instanceof EEnum) {
+            featureKind = ENUM_ATTRIBUTE;
+        } else if (type instanceof EDataType) {
+            featureKind = DATA_TYPE_ATTRIBUTE;
+        }
+        return featureKind;
+    }
+
+    private JsonElement serializeFeature(EObject eObject, EStructuralFeature feature, byte featureKind) {
+        return switch (featureKind) {
+            case STRING_ATTRIBUTE -> this.serializeEStringEAttribute(eObject, (EAttribute) feature);
+            case BOOLEAN_ATTRIBUTE -> this.serializeEBooleanEAttribute(eObject, (EAttribute) feature);
+            case NUMBER_ATTRIBUTE -> this.serializeENumberEAttribute(eObject, (EAttribute) feature);
+            case BYTE_ARRAY_ATTRIBUTE -> this.serializeEByteArrayEAttribute(eObject, (EAttribute) feature);
+            case DATE_ATTRIBUTE -> this.serializeEDateEAttribute(eObject, (EAttribute) feature);
+            case ENUM_ATTRIBUTE -> this.serializeEEnumEAttribute(eObject, (EAttribute) feature);
+            case DATA_TYPE_ATTRIBUTE -> this.serializeEDataType(eObject, (EAttribute) feature);
+            case SINGLE_CONTAINMENT -> this.serializeSingleContainmentEReference(eObject, (EReference) feature);
+            case MULTIPLE_CONTAINMENT -> this.serializeMultipleContainmentEReference(eObject, (EReference) feature);
+            case SINGLE_REFERENCE -> this.serializeSingleNonContainmentEReference(eObject, (EReference) feature);
+            case MULTIPLE_REFERENCE -> this.serializeMultipleNonContainmentEReference(eObject, (EReference) feature);
+            default -> {
+                JsonElement value = null;
+                if (feature instanceof EAttribute attribute) {
+                    value = this.serializeEAttribute(eObject, attribute);
+                } else if (feature instanceof EReference reference) {
+                    value = this.serializeEReference(eObject, reference);
+                }
+                yield value;
+            }
+        };
     }
 
     /**
