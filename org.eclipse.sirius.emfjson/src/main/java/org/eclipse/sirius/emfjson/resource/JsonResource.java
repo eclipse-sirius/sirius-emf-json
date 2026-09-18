@@ -442,6 +442,19 @@ public interface JsonResource extends Resource {
     String OPTION_SERIALIZATION_LISTENER = "OPTION_SERIALIZATION_LISTENER"; //$NON-NLS-1$
 
     /**
+     * Opt-in streaming resource saves. Writes content before headers and omits
+     * {@link ISerializationListener#onObjectSerialized(EObject, JsonElement)} callbacks.
+     * EObject handlers, custom helpers and enabled extended metadata are rejected.
+     * Namespace/reference listeners and header processors remain active. Frozen standard
+     * classes with distinct feature names stream directly; other objects use temporary trees.
+     * The JSON has the same values but different member ordering. A failed save may have
+     * already written partial content, so callers must discard its output.
+     *
+     * @since 2.5.5
+     */
+    String OPTION_STREAMING = "OPTION_STREAMING"; //$NON-NLS-1$
+
+    /**
      * Used to listen to various events during the serialization.
      *
      * @author <a href="mailto:stephane.begaudeau@obeo.fr">Stephane Begaudeau</a>

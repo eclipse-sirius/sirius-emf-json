@@ -1,6 +1,6 @@
 :author: Cedric Brun
 :date: 2026-09-18
-:status: proposed
+:status: accepted
 
 = ADR-001 - Optional streaming JSON saves
 
@@ -28,13 +28,14 @@ Changes must remain independently reviewable in contributions below 500 lines.
 
 == Decision Outcome
 
-Explore `OPTION_STREAMING` on resource saves. Write `content` before the
+Use `OPTION_STREAMING` on resource saves. Write `content` before the
 headers so namespace discovery needs no preliminary traversal. JSON object
 member order is different; the existing loader looks up headers by name.
 The default save path and its byte ordering remain unchanged.
 
 Streaming omits `onObjectSerialized` notifications and rejects EObject
-handlers, custom helpers and enabled extended metadata before writing.
+handlers, custom helpers and enabled extended metadata before serializer output.
+Resource `preSave` handlers run first as usual.
 Namespace and cross-reference listeners and the root-header processor remain
 active. The processor still receives the `json` and `ns` members before
 schema locations are attached. Its `content` member is overwritten by the

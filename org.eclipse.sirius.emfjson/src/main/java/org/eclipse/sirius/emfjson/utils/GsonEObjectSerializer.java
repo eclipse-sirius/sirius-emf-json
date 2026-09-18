@@ -15,12 +15,16 @@ package org.eclipse.sirius.emfjson.utils;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonWriter;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
@@ -29,11 +33,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.IdentityHashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -49,6 +55,7 @@ import org.eclipse.emf.ecore.EEnum;
 import org.eclipse.emf.ecore.EEnumLiteral;
 import org.eclipse.emf.ecore.EFactory;
 import org.eclipse.emf.ecore.EGenericType;
+import org.eclipse.emf.ecore.EModelElement;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EOperation;
 import org.eclipse.emf.ecore.EPackage;
@@ -98,6 +105,12 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      * In case of serialize non containment references, where the reference is in an other document.
      */
     private static final int CROSS_DOC = 2;
+
+    private static final TypeAdapter<JsonElement> JSON_ELEMENT_ADAPTER = new Gson().getAdapter(JsonElement.class);
+
+    private final Map<EClass, Boolean> streamingClasses = new IdentityHashMap<>();
+
+    private boolean streaming;
 
     private static final byte UNKNOWN_FEATURE = 0;
 
@@ -253,6 +266,12 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
             data.add(this.createData(eObject));
         }
 
+        JsonObject jsonObject = this.createHeader();
+        jsonObject.add(IGsonConstants.CONTENT, data);
+        return jsonObject;
+    }
+
+    private JsonObject createHeader() {
         JsonElement jsonHeader = this.createJsonHeader();
         JsonElement nsHeader = this.createNsHeader();
         JsonElement schemaLocationHeader = this.createSchemaLocationHeader();
@@ -266,9 +285,71 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         if (schemaLocationHeader != null) {
             jsonObject.add(IGsonConstants.SCHEMA_LOCATION, schemaLocationHeader);
         }
-        jsonObject.add(IGsonConstants.CONTENT, data);
-
         return jsonObject;
+    }
+
+    /**
+     * Writes content before its headers without object-tree callbacks. Unsupported helper options
+     * and EObject handlers are rejected before writing; see {@link JsonResource#OPTION_STREAMING}.
+     *
+     * @param eObjects the resource contents
+     * @param writer the JSON writer, configured by Gson
+     * @throws IOException if writing fails
+     * @since 2.5.5
+     */
+    public void write(List<EObject> eObjects, JsonWriter writer) throws IOException {
+        Object metadata = this.options.get(JsonResource.OPTION_EXTENDED_META_DATA);
+        if (this.eObjectHandler != null || this.options.get(JsonResource.OPTION_CUSTOM_HELPER) != null
+                || metadata != null && !Boolean.FALSE.equals(metadata)) {
+            throw new IllegalArgumentException("Streaming does not support EObject handlers, custom helpers or extended metadata"); //$NON-NLS-1$
+        }
+        this.streaming = true;
+        try {
+            writer.beginObject().name(IGsonConstants.CONTENT).beginArray();
+            for (EObject object : eObjects) {
+                this.writeData(object, writer);
+            }
+            writer.endArray();
+            JsonObject header = this.createHeader();
+            // Ordinary saves overwrite any content supplied by the processor.
+            header.remove(IGsonConstants.CONTENT);
+            for (Entry<String, JsonElement> entry : header.entrySet()) {
+                writer.name(entry.getKey());
+                JSON_ELEMENT_ADAPTER.write(writer, entry.getValue());
+            }
+            writer.endObject();
+        } finally {
+            this.streaming = false;
+        }
+    }
+
+    private void writeData(EObject object, JsonWriter writer) throws IOException {
+        EClass type = object.eClass();
+        if (object instanceof EModelElement || object instanceof EGenericType || type.getClass() != EClassImpl.class || !((EClassImpl) type).isFrozen()
+                || !this.streamingClasses.computeIfAbsent(type, this::hasStableFeatureNames)) {
+            JSON_ELEMENT_ADAPTER.write(writer, this.createData(object));
+            return;
+        }
+        writer.beginObject();
+        Object manager = this.options.get(JsonResource.OPTION_ID_MANAGER);
+        if (manager instanceof IDManager idManager) {
+            writer.name(IGsonConstants.ID).value(Objects.requireNonNull(idManager.getOrCreateId(object)));
+        }
+        writer.name(IGsonConstants.ECLASS).value(Objects.requireNonNull(this.helper.getQName(type)));
+        this.serializeEAllStructuralFeatures(object, writer);
+        writer.endObject();
+    }
+
+    private boolean hasStableFeatureNames(EClass type) {
+        var names = new HashSet<String>();
+        for (EStructuralFeature feature : type.getEAllStructuralFeatures()) {
+            if ((feature.getClass() != EAttributeImpl.class && feature.getClass() != EReferenceImpl.class)
+                    || feature.getEContainingClass().getClass() != EClassImpl.class
+                    || !((EClassImpl) feature.getEContainingClass()).isFrozen() || !names.add(feature.getName())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -300,11 +381,12 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
             }
         }
 
-        if (this.eObjectHandler != null) {
-            this.eObjectHandler.processSerializedContent(jsonElement, eObject);
+        if (!this.streaming) {
+            if (this.eObjectHandler != null) {
+                this.eObjectHandler.processSerializedContent(jsonElement, eObject);
+            }
+            this.serializationListener.onObjectSerialized(eObject, jsonElement);
         }
-
-        this.serializationListener.onObjectSerialized(eObject, jsonElement);
 
         return jsonElement;
     }
@@ -944,9 +1026,18 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      *            The EObject to serialize
      * @return A JsonObject containing all the properties of the given object
      */
-    @SuppressWarnings("unchecked")
     private JsonObject serializeEAllStructuralFeatures(EObject eObject) {
-        JsonObject properties = new JsonObject();
+        try {
+            return this.serializeEAllStructuralFeatures(eObject, null);
+        } catch (IOException exception) {
+            throw new JsonIOException(exception);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private JsonObject serializeEAllStructuralFeatures(EObject eObject, JsonWriter writer) throws IOException {
+        JsonObject properties = writer == null ? new JsonObject() : null;
+        boolean dataStarted = false;
         EClass eClass = eObject.eClass();
         List<EStructuralFeature> eAllStructuralFeatures = eClass.getEAllStructuralFeatures();
 
@@ -979,15 +1070,59 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                     featureKind = this.classifyAttribute((EAttribute) eStructuralFeature);
                     serializationPlan.featureKinds[index] = featureKind;
                 }
-                JsonElement value = this.serializeFeature(eObject, eStructuralFeature, featureKind);
+                Object containment = null;
+                Object referenceValue = null;
+                boolean containmentFeature = false;
+                boolean many = false;
+                if (writer != null && eStructuralFeature instanceof EReference reference && reference.isContainment()) {
+                    containmentFeature = true;
+                    referenceValue = this.helper.getValue(eObject, reference);
+                    many = reference.isMany();
+                    if (many && referenceValue instanceof Iterable<?>) {
+                        containment = referenceValue;
+                    } else if (!many && referenceValue instanceof EObject child
+                            && !(child instanceof BasicEObjectImpl basic && basic.eDirectResource() != null)
+                            && child.eResource() == eObject.eResource()) {
+                        containment = child;
+                    }
+                }
+                JsonElement value = null;
+                if (!containmentFeature) {
+                    value = this.serializeFeature(eObject, eStructuralFeature, featureKind);
+                } else if (containment == null && !many) {
+                    value = this.serializeSingleContainmentValue(eObject, referenceValue);
+                }
 
-                if (value != null) {
+                if (value != null || containment != null) {
                     String featureName = this.helper.getQName(eStructuralFeature);
-                    properties.add(featureName, value);
+                    if (writer == null) {
+                        properties.add(featureName, value);
+                    } else {
+                        if (!dataStarted) {
+                            writer.name(IGsonConstants.DATA).beginObject();
+                            dataStarted = true;
+                        }
+                        writer.name(featureName);
+                        if (containment == null) {
+                            JSON_ELEMENT_ADAPTER.write(writer, value);
+                        } else if (many) {
+                            writer.beginArray();
+                            for (Object child : (Iterable<?>) containment) {
+                                if (child instanceof EObject childObject) {
+                                    this.writeData(childObject, writer);
+                                }
+                            }
+                            writer.endArray();
+                        } else {
+                            this.writeData((EObject) containment, writer);
+                        }
+                    }
                 }
             }
         }
-
+        if (dataStarted) {
+            writer.endObject();
+        }
         return properties;
     }
 
@@ -1506,9 +1641,12 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
      * @return A JsonElement with the property IGsonConstants.ECLASS and the serialized EObject as a value
      */
     private JsonElement serializeSingleContainmentEReference(EObject eObject, EReference eReference) {
-        JsonElement jsonElement = null;
-
         Object referenceValue = this.helper.getValue(eObject, eReference);
+        return this.serializeSingleContainmentValue(eObject, referenceValue);
+    }
+
+    private JsonElement serializeSingleContainmentValue(EObject eObject, Object referenceValue) {
+        JsonElement jsonElement = null;
         if (referenceValue instanceof EObject) {
             if (referenceValue instanceof BasicEObjectImpl && ((BasicEObjectImpl) referenceValue).eDirectResource() != null) {
                 jsonElement = new JsonPrimitive(this.removeFragmentSeparator(this.helper.deresolve(EcoreUtil.getURI((EObject) referenceValue)).toString()));

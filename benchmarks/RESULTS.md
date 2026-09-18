@@ -233,6 +233,35 @@ Every run produced the same 25,347,610 JSON bytes and passed model validation.
 These remain separate single-JVM observations without a between-JVM confidence
 interval; the 0.28% result in particular is within ordinary run-to-run noise.
 
+### Optional streaming saves
+
+`OPTION_STREAMING` avoids the full object/containment tree for frozen standard
+metadata. It writes content before headers and skips object-tree callbacks;
+see ADR-001 for restrictions and fallback behavior. This option is not enabled
+by default and has not been adopted in Sirius Web by this contribution.
+
+Two cross-ordered Apollo runs used one fresh JVM per mode, two warmups and ten
+measurements (Java 21, G1, fixed 2 GiB heap):
+
+| Order | Mode | Wall ms | CPU ms | Allocated bytes |
+| --- | --- | ---: | ---: | ---: |
+| Tree then stream | Tree | 238.376 | 238.039 | 266,537,240 |
+| Tree then stream | Stream | 209.595 | 206.270 | 180,469,272 |
+| Stream then tree | Tree | 241.949 | 240.863 | 264,320,344 |
+| Stream then tree | Stream | 215.639 | 210.689 | 180,469,272 |
+
+Streaming reduced allocations by 31.72–32.29%, wall time by 10.87–12.07% and
+CPU by 12.53–13.35% in these single-JVM observations. Both modes produced
+25,347,610 bytes. Streaming passed complete JSON-tree equality and persistent
+model/ID validation; ordinary output remained byte-identical to the previous
+revision. There is no between-JVM confidence interval or end-to-end claim.
+Artifacts: `target/performance/streaming-acceptance` and its `-reversed` run.
+
+A separate scoped JFR (1,758 allocation samples) attributed 51.02% of remaining
+sampled bytes to output-array growth/copying, including 14.10% to the final
+`toByteArray`, and 22.92% inclusively to SysML adapter lookup. These estimates
+are not exact component counters; inclusive stacks can overlap.
+
 ### Optimized JSON versus EMF binary serialization
 
 The diagnostic uses `XMIResourceImpl` with `XMLResource.OPTION_BINARY` and the

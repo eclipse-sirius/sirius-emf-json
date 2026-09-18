@@ -31,6 +31,17 @@ Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("json", new Js
 See https://github.com/eclipse-sirius/sirius-web/tree/master/packages/emf/backend/sirius-components-emf[the Sirius Web sources] for concrete usage examples.
 
 
+=== Allocation-sensitive saves
+
+`resource.save(output, Map.of(JsonResource.OPTION_STREAMING, true))` enables
+optional streaming for frozen standard metamodels. Other objects use temporary
+trees. Content is written before headers, with the same JSON values.
+This mode skips `onObjectSerialized` and rejects EObject handlers, custom
+helpers and enabled extended metadata. Namespace/reference listeners and
+header processors remain active. Check these restrictions before adopting it.
+See link:doc/adrs/001-streaming-json-save.adoc[ADR-001] and
+link:benchmarks/RESULTS.md[the measured results].
+
 == License
 
 Eclipse Public License - v 2.0

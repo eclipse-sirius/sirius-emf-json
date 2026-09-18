@@ -17,6 +17,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.TypeAdapter;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
@@ -371,7 +372,21 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
         GsonEObjectSerializer objectSerializer = new GsonEObjectSerializer(this, saveOptions);
 
         GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(typeToken.getType(), objectSerializer);
+        if (Boolean.TRUE.equals(saveOptions.get(JsonResource.OPTION_STREAMING))) {
+            gsonBuilder.registerTypeAdapter(typeToken.getType(), new TypeAdapter<EList<EObject>>() {
+                @Override
+                public void write(JsonWriter writer, EList<EObject> contents) throws IOException {
+                    objectSerializer.write(contents, writer);
+                }
+
+                @Override
+                public EList<EObject> read(JsonReader reader) {
+                    throw new UnsupportedOperationException();
+                }
+            });
+        } else {
+            gsonBuilder.registerTypeAdapter(typeToken.getType(), objectSerializer);
+        }
         Gson gson = gsonBuilder.disableHtmlEscaping().create();
 
         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, encoding.toString());

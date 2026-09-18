@@ -18,6 +18,7 @@
 - Reduce allocations when assigning an unchanged object ID while preserving ID manager callbacks.
 - Reduce save overhead for excluded features of frozen EClasses while preserving dynamic options and custom metadata behavior.
 - Reduce save dispatch overhead with session-scoped plans for frozen standard EClass features.
+- Add opt-in streaming JSON saves to reduce allocations when object-tree callbacks are not needed.
 
 === Architectural decision records
 
