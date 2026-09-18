@@ -51,8 +51,8 @@ public class SysMLBenchmark {
     private final BenchmarkIDManager identifiers = new BenchmarkIDManager();
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 3 || !List.of("prepare", "save", "binary-save", "load", "save-string", "load-string", "tree", "emit", "parse", "materialize").contains(args[0])) {
-            throw new IllegalArgumentException("prepare|save|binary-save|load|save-string|load-string|tree|emit|parse|materialize corpus.bin output-directory [warmup=10] [iterations=30] [recording.jfr]");
+        if (args.length < 3 || !List.of("prepare", "save", "save-streaming", "binary-save", "load", "save-string", "load-string", "tree", "emit", "parse", "materialize").contains(args[0])) {
+            throw new IllegalArgumentException("prepare|save|save-streaming|binary-save|load|save-string|load-string|tree|emit|parse|materialize corpus.bin output-directory [warmup=10] [iterations=30] [recording.jfr]");
         }
         SysMLLogicStandaloneSetup.doSetup();
         new SysMLBenchmark().run(args);
@@ -104,6 +104,7 @@ public class SysMLBenchmark {
             var measurement = new Measurement();
             if (recording != null) {
                 recording.enable("jdk.GCCPUTime");
+                recording.enable("jdk.ObjectAllocationSample").with("throttle", "1000/s");
                 recording.enable("emfjson.Measurement");
                 recording.start();
             }
@@ -116,6 +117,7 @@ public class SysMLBenchmark {
                 long wall = System.nanoTime();
                 result = switch (operation) {
                     case "save" -> this.save(source);
+                    case "save-streaming" -> this.saveStreaming(source);
                     case "binary-save" -> this.saveBinary(binarySource);
                     case "load" -> this.load(baseline);
                     case "save-string" -> this.output(source).toString(StandardCharsets.UTF_8);
@@ -153,7 +155,12 @@ public class SysMLBenchmark {
                 case JsonElement data -> this.emit(data);
                 default -> throw new IllegalStateException("Missing benchmark result");
             };
-            if (!Arrays.equals(baseline, bytes)) {
+            if (operation.equals("save-streaming")) {
+                var streamed = this.parse(bytes).getAsJsonObject();
+                if (!streamed.keySet().iterator().next().equals("content") || !streamed.equals(this.parse(baseline))) {
+                    throw new IllegalStateException("Streaming must write content first and preserve the JSON tree");
+                }
+            } else if (!Arrays.equals(baseline, bytes)) {
                 throw new IllegalStateException("Saved bytes differ from baseline JSON");
             }
             loaded = this.load(bytes);
@@ -210,6 +217,15 @@ public class SysMLBenchmark {
     private byte[] saveBinary(XMIResourceImpl resource) throws Exception {
         var output = new ByteArrayOutputStream();
         resource.save(output, Map.of(XMLResource.OPTION_BINARY, true));
+        return output.toByteArray();
+    }
+
+    private byte[] saveStreaming(JsonResourceImpl resource) throws Exception {
+        var output = new ByteArrayOutputStream();
+        var options = new HashMap<Object, Object>(this.saveOptions());
+        // Literal keeps this harness compilable against revisions predating the option.
+        options.put("OPTION_STREAMING", true);
+        resource.save(output, options);
         return output.toByteArray();
     }
 

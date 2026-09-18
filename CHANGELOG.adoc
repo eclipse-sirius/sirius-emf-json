@@ -14,9 +14,14 @@
 - Reduce JSON save allocations by pre-sizing arrays from known reference-list sizes.
 - Add isolated codec-phase diagnostics and campaign-aware CPU/allocation profile analysis.
 - Add an EMF binary save diagnostic for comparing codec time, allocation and output size.
+- Add a JSON streaming-save diagnostic with JSON-tree and model-equivalence checks.
 - Reduce allocations when assigning an unchanged object ID while preserving ID manager callbacks.
 - Reduce save overhead for excluded features of frozen EClasses while preserving dynamic options and custom metadata behavior.
 - Reduce save dispatch overhead with session-scoped plans for frozen standard EClass features.
+
+=== Architectural decision records
+
+- link:doc/adrs/001-streaming-json-save.adoc[ADR-001] Explore optional streaming JSON saves with an explicit object-callback restriction.
 
 
 == v2.5.4

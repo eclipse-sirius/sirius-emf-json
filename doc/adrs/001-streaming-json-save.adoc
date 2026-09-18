@@ -1,0 +1,70 @@
+:author: Cedric Brun
+:date: 2026-09-18
+:status: proposed
+
+= ADR-001 - Optional streaming JSON saves
+
+== Context and Problem Statement
+
+Apollo 11 saves allocate about 264 MB for a 25 MB JSON document after the
+existing optimizations. Its representation contains 277,115 JSON objects
+and 93,452 arrays. Most of these containers exist only to be written once.
+Object callbacks can inspect and modify complete subtrees, preventing their
+unconditional removal. Output-buffer and SysML allocations are separate costs.
+
+== Decision Drivers
+
+Reduce allocations in emf-json, keep the existing save contract by default,
+reuse feature selection and datatype conversion, and retain the current loader.
+Changes must remain independently reviewable in contributions below 500 lines.
+
+== Considered Options
+
+* Opt-in streaming: avoid object and containment containers where metadata is
+  stable, retaining the tree path as a compatibility fallback.
+* More scalar caches: small savings, bounded by the number of scalar wrappers.
+* Replace all serialization: incompatible with existing subtree callbacks.
+* Change caller buffers or SysML: outside this contribution's scope.
+
+== Decision Outcome
+
+Explore `OPTION_STREAMING` on resource saves. Write `content` before the
+headers so namespace discovery needs no preliminary traversal. JSON object
+member order is different; the existing loader looks up headers by name.
+The default save path and its byte ordering remain unchanged.
+
+Streaming omits `onObjectSerialized` notifications and rejects EObject
+handlers, custom helpers and enabled extended metadata before writing.
+Namespace and cross-reference listeners and the root-header processor remain
+active. The processor still receives the `json` and `ns` members before
+schema locations are attached. Its `content` member is overwritten by the
+resource content as in ordinary saves.
+
+Only frozen standard classes with stable, distinct feature names use direct
+object streaming. Other objects, including Ecore metadata, use subtree
+serialization. Attribute conversion and reference handling remain shared.
+
+== Consequences
+
+=== Advantages
+
+No new dependency or format migration is needed. Callers can opt in after
+checking their callbacks. This repository alone can implement and measure it.
+
+=== Drawbacks
+
+This is not byte-identical output and it has an explicit callback restriction.
+Errors can leave a partially written document. Mutable or specialized metadata
+can retain tree allocation. Caller buffers and SysML allocations remain.
+Sirius Web adoption needs its own change and assessment of migration participants;
+no application integration gain is claimed here.
+
+== More Information
+
+=== Implementation
+
+First implement and test the optional path with shared feature traversal,
+then measure Apollo with one JVM, two warmups and ten measurements per variant.
+Verify JSON-tree equality and persistent-model/ID fingerprints outside timing.
+Keep a separate commit for any follow-up removal of temporary scalar values.
+Retain the option only if the measured allocation reduction justifies its cost.

@@ -67,6 +67,8 @@ JFR starts before warmup. The custom `emfjson.Measurement` event bounds the
 measured interval; include it when exporting samples. This avoids attributing
 startup instrumentation and accumulated pre-recording allocations to the
 codec. Sampling does not replace the exact per-thread allocation counters.
+Separate profiling runs request up to 1,000 allocation samples per second
+to improve attribution during short campaigns; they are not timing results.
 
 Summarize unprofiled forks with `python3.13 benchmarks/summarize.py
 target/performance/comparison/*-fork*.csv`. Use `--json` for machine-readable
@@ -88,6 +90,14 @@ output size. The binary result is reloaded and checked with the same persistent
 model and ID fingerprint. This is a codec diagnostic, not evidence that the
 binary format preserves JSON processors, handlers, migrations or database
 compatibility.
+
+`OPERATIONS='save save-streaming'` compares the ordinary save with the opt-in
+`OPTION_STREAMING` path. Streaming writes `content` first and deliberately
+omits object-tree callbacks. Its output must have this ordering, equal the
+baseline JSON tree, and reload with the same persistent-model/ID fingerprint;
+the ordinary save still requires byte equality. This diagnostic must run
+against a revision supporting the option. It does not demonstrate compatibility
+with arbitrary application callbacks or migration participants.
 
 ```sh
 /path/to/jdk21/bin/jfr print --json \
