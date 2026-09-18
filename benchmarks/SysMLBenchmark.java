@@ -7,6 +7,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -29,9 +31,11 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import com.google.gson.reflect.TypeToken;
 import jdk.jfr.Configuration;
 import jdk.jfr.Recording;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -51,8 +55,8 @@ public class SysMLBenchmark {
     private final BenchmarkIDManager identifiers = new BenchmarkIDManager();
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 3 || !List.of("prepare", "save", "save-streaming", "binary-save", "load", "save-string", "load-string", "tree", "emit", "parse", "materialize").contains(args[0])) {
-            throw new IllegalArgumentException("prepare|save|save-streaming|binary-save|load|save-string|load-string|tree|emit|parse|materialize corpus.bin output-directory [warmup=10] [iterations=30] [recording.jfr]");
+        if (args.length < 3 || !List.of("prepare", "save", "save-characters", "save-streaming", "binary-save", "load", "load-characters", "save-string", "save-string-sized", "load-string", "tree", "emit", "parse", "materialize").contains(args[0])) {
+            throw new IllegalArgumentException("prepare|save|save-characters|save-streaming|binary-save|load|load-characters|save-string|save-string-sized|load-string|tree|emit|parse|materialize corpus.bin output-directory [warmup=10] [iterations=30] [recording.jfr]");
         }
         SysMLLogicStandaloneSetup.doSetup();
         new SysMLBenchmark().run(args);
@@ -82,7 +86,7 @@ public class SysMLBenchmark {
         var source = operation.startsWith("save") || operation.equals("tree") ? this.source(Path.of(args[1])) : null;
         var binarySource = operation.equals("binary-save") ? this.binarySource(Path.of(args[1])) : null;
         var tree = List.of("emit", "materialize").contains(operation) ? this.parse(baseline) : null;
-        var text = operation.equals("load-string") ? new String(baseline, StandardCharsets.UTF_8) : null;
+        var text = operation.equals("load-string") || operation.equals("load-characters") ? new String(baseline, StandardCharsets.UTF_8) : null;
         if (source != null) {
             this.validate(source, expected);
         }
@@ -117,10 +121,13 @@ public class SysMLBenchmark {
                 long wall = System.nanoTime();
                 result = switch (operation) {
                     case "save" -> this.save(source);
+                    case "save-characters" -> this.saveCharacters(source);
                     case "save-streaming" -> this.saveStreaming(source);
                     case "binary-save" -> this.saveBinary(binarySource);
                     case "load" -> this.load(baseline);
+                    case "load-characters" -> this.loadCharacters(text);
                     case "save-string" -> this.output(source).toString(StandardCharsets.UTF_8);
+                    case "save-string-sized" -> this.output(source, baseline.length).toString(StandardCharsets.UTF_8);
                     case "load-string" -> this.load(text.getBytes(StandardCharsets.UTF_8));
                     case "tree" -> new GsonEObjectSerializer(source, this.saveOptions()).serialize(source.getContents(), List.class, null);
                     case "emit" -> this.emit(tree);
@@ -220,6 +227,17 @@ public class SysMLBenchmark {
         return output.toByteArray();
     }
 
+    private String saveCharacters(JsonResourceImpl resource) throws Exception {
+        var type = new TypeToken<EList<EObject>>() { };
+        var serializer = new GsonEObjectSerializer(resource, this.saveOptions());
+        var gson = new GsonBuilder().registerTypeAdapter(type.getType(), serializer).disableHtmlEscaping().create();
+        var output = new StringWriter();
+        try (var writer = new JsonWriter(output)) {
+            gson.toJson(resource.getContents(), type.getType(), writer);
+        }
+        return output.toString();
+    }
+
     private byte[] saveStreaming(JsonResourceImpl resource) throws Exception {
         var output = new ByteArrayOutputStream();
         var options = new HashMap<Object, Object>(this.saveOptions());
@@ -230,7 +248,11 @@ public class SysMLBenchmark {
     }
 
     private ByteArrayOutputStream output(JsonResourceImpl resource) throws Exception {
-        var output = new ByteArrayOutputStream();
+        return this.output(resource, 32);
+    }
+
+    private ByteArrayOutputStream output(JsonResourceImpl resource, int capacity) throws Exception {
+        var output = new ByteArrayOutputStream(capacity);
         resource.save(output, this.saveOptions());
         return output;
     }
@@ -275,6 +297,18 @@ public class SysMLBenchmark {
     private JsonResourceImpl load(byte[] bytes) throws Exception {
         var resource = this.resource();
         resource.load(new ByteArrayInputStream(bytes), Map.of());
+        return resource;
+    }
+
+    private JsonResourceImpl loadCharacters(String text) throws Exception {
+        var resource = this.resource();
+        var options = Map.of(JsonResource.OPTION_ID_MANAGER, this.identifiers,
+                JsonResource.OPTION_DISPLAY_DYNAMIC_INSTANCES, true,
+                JsonResource.OPTION_ENCODING, JsonResource.ENCODING_UTF_8);
+        var gson = new GsonBuilder().registerTypeAdapter(List.class, new GsonEObjectDeserializer(resource, options)).disableHtmlEscaping().create();
+        try (var reader = new JsonReader(new StringReader(text))) {
+            gson.fromJson(reader, new TypeToken<List<EObject>>() { }.getType());
+        }
         return resource;
     }
 

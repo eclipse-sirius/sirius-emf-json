@@ -75,13 +75,18 @@ target/performance/comparison/*-fork*.csv`. Use `--json` for machine-readable
 results. The analysis treats JVMs as independent replicas and keeps separate
 campaign directories separate. Empty or invalid CSVs fail analysis.
 
-`OPERATIONS='tree emit parse materialize save-string load-string'` selects
-additional diagnostics: DOM construction, buffered emission of a retained
-DOM, JSON parsing, construction of EMF objects from a retained DOM, and the
-String conversions at the document boundary. These phases are independent
+`OPERATIONS='tree emit parse materialize save-string save-string-sized
+save-characters load-string load-characters'` selects additional diagnostics:
+DOM construction, buffered emission of a retained DOM, JSON parsing,
+construction of EMF objects from a retained DOM, and the byte/character
+conversions at the document boundary. `save-string-sized` uses the exact
+reference byte length as its initial output capacity. The character variants
+call the ordinary Gson tree adapters but bypass the EMF `InputStream` and
+`OutputStream` lifecycle, including `ResourceHandler`; they are opportunity
+bounds, not compatible replacement APIs. These phases are independent
 experiments, not additive timings: retained trees change live memory, and
-direct materialization omits the `Resource.load` lifecycle. Their ratios
-are not guaranteed gains from a hypothetical streaming implementation.
+direct materialization omits the `Resource.load` lifecycle. Their ratios are
+not guaranteed gains from a hypothetical streaming implementation.
 
 `OPERATIONS='save binary-save'` compares JSON saving with EMF's native binary
 path through `XMIResourceImpl` and `XMLResource.OPTION_BINARY`. Both operations

@@ -315,6 +315,40 @@ Its observed allocation change ranged from -0.025% to -0.856%, affected by
 the already observed JVM allocation regimes. Streaming removes class-name
 wrappers entirely, without an additional primitive cache.
 
+### Non-streaming String boundaries
+
+Sirius Web persists JSON as a `String`: saving currently grows a default
+`ByteArrayOutputStream` before UTF-8 decoding, while loading encodes that
+`String` back to UTF-8 bytes. One fresh JVM per operation, two warmups and ten
+measurements gave these same-revision observations:
+
+| Operation | Wall ms | CPU ms | Allocated bytes |
+| --- | ---: | ---: | ---: |
+| Save to String | 247.310 | 242.755 | 367,920,448 |
+| Save to exactly sized byte buffer, then String | 238.743 | 236.486 | 323,950,272 |
+| Save directly to characters | 368.331 | 362.015 | 375,572,352 |
+| Load from String through UTF-8 bytes | 475.512 | 403.602 | 499,585,904 |
+| Load directly from characters | 451.065 | 388.912 | 393,485,060 |
+
+Exact byte-buffer sizing removed 43.97 MB, or 11.95% of save allocations. It
+requires a reliable caller-owned capacity hint; `Resource.save(OutputStream)`
+cannot resize an already supplied stream. Direct character output was rejected:
+it allocated 2.08% more and took about 49% longer than the current String path.
+
+Direct character input removed 106.10 MB, or 21.24% of load allocations, by
+avoiding `String.getBytes(UTF_8)`. It is not a drop-in `Resource.load` change:
+the existing `ResourceHandler` contract receives the original `InputStream` in
+`preLoad` and `postLoad`. A Reader API would therefore need an explicit lifecycle
+contract and Sirius Web adoption; no compatible runtime gain is claimed here.
+All variants preserved the model/ID fingerprint and the save variants produced
+the same 25,347,610 UTF-8 bytes. These are single-JVM observations without a
+between-JVM confidence interval. Artifacts:
+`target/performance/character-boundary-acceptance`.
+
+Reusing one immutable class-name `JsonPrimitive` per `EClass` was also rejected.
+A 2+5 screening saved 2.21 MB per save (0.83%) but increased median wall and CPU
+time by about 4%; the extra identity-map lookup was not justified.
+
 ### Optimized JSON versus EMF binary serialization
 
 The diagnostic uses `XMIResourceImpl` with `XMLResource.OPTION_BINARY` and the
