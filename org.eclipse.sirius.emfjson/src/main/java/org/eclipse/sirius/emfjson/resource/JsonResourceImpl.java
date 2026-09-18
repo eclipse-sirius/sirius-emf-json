@@ -22,12 +22,14 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Arrays;
@@ -51,6 +53,45 @@ import org.eclipse.sirius.emfjson.utils.GsonEObjectSerializer;
  */
 public class JsonResourceImpl extends ResourceImpl implements JsonResource {
 
+    private static final class StringInputStream extends InputStream {
+
+        private final String content;
+
+        private final String encoding;
+
+        private ByteArrayInputStream encodedContent;
+
+        StringInputStream(String content, String encoding) {
+            this.content = content;
+            this.encoding = encoding;
+        }
+
+        @Override
+        public int read() throws IOException {
+            return this.encodedContent().read();
+        }
+
+        @Override
+        public int read(byte[] bytes, int offset, int length) throws IOException {
+            return this.encodedContent().read(bytes, offset, length);
+        }
+
+        StringReader reader() {
+            return new StringReader(this.content);
+        }
+
+        boolean isUntouched() {
+            return this.encodedContent == null;
+        }
+
+        private ByteArrayInputStream encodedContent() throws UnsupportedEncodingException {
+            if (this.encodedContent == null) {
+                this.encodedContent = new ByteArrayInputStream(this.content.getBytes(this.encoding));
+            }
+            return this.encodedContent;
+        }
+    }
+
     /**
      * The map from id to {@link EObject}. It is used to store IDs when {@link IDManager} are used to handle id when an
      * object is added.
@@ -68,6 +109,34 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
     private boolean useID;
 
     private boolean useIDAsURIFragment;
+
+    @Override
+    public void loadFromString(String content, Map<?, ?> options) throws IOException {
+        if (this.isLoaded()) {
+            return;
+        }
+        Objects.requireNonNull(content);
+        Map<Object, Object> effectiveOptions = new HashMap<>(this.resourceOptions);
+        if (this.defaultLoadOptions != null) {
+            effectiveOptions.putAll(this.defaultLoadOptions);
+        }
+        if (options != null) {
+            effectiveOptions.putAll(options);
+        }
+        Object encoding = effectiveOptions.get(JsonResource.OPTION_ENCODING);
+        if (encoding == null) {
+            encoding = JsonResource.ENCODING_UTF_8;
+        }
+        if (effectiveOptions.get(JsonResource.OPTION_RESOURCE_HANDLER) != null) {
+            try (var inputStream = new ByteArrayInputStream(content.getBytes(encoding.toString()))) {
+                this.load(inputStream, options);
+            }
+        } else {
+            try (var inputStream = new StringInputStream(content, encoding.toString())) {
+                this.load(inputStream, options);
+            }
+        }
+    }
 
     /**
      * The constructor. <br/>
@@ -319,7 +388,11 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
         JsonReader reader = null;
 
         try {
-            reader = new JsonReader(new InputStreamReader(inputStream, encoding.toString()));
+            if (inputStream instanceof StringInputStream stringInputStream && stringInputStream.isUntouched()) {
+                reader = new JsonReader(stringInputStream.reader());
+            } else {
+                reader = new JsonReader(new InputStreamReader(inputStream, encoding.toString()));
+            }
 
             gson.fromJson(reader, typeToken.getType());
 

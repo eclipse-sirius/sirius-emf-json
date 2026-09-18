@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2025 Obeo.
+ * Copyright (c) 2020, 2026 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -16,9 +16,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -36,6 +39,40 @@ import org.eclipse.emf.ecore.resource.Resource;
  * @author <a href="mailto:stephane.begaudeau@obeo.fr">Stephane Begaudeau</a>
  */
 public interface JsonResource extends Resource {
+
+    /**
+     * Loads JSON characters without an intermediate encoded byte array.
+     * <p>
+     * Implementations may fall back to the ordinary stream path when an option
+     * requires access to the original {@link InputStream} lifecycle.
+     * Character input is consumed as supplied; the encoding option applies only
+     * when an implementation uses that stream fallback.
+     * </p>
+     *
+     * @param content
+     *            the JSON content
+     * @param options
+     *            the load options
+     * @throws IOException
+     *             if loading fails
+     */
+    default void loadFromString(String content, Map<?, ?> options) throws IOException {
+        if (this.isLoaded()) {
+            return;
+        }
+        Object encoding = options == null ? null : options.get(JsonResource.OPTION_ENCODING);
+        if (encoding == null) {
+            encoding = JsonResource.ENCODING_UTF_8;
+        }
+        Map<Object, Object> loadOptions = new HashMap<>();
+        if (options != null) {
+            loadOptions.putAll(options);
+        }
+        loadOptions.put(JsonResource.OPTION_ENCODING, encoding);
+        try (var inputStream = new ByteArrayInputStream(content.getBytes(encoding.toString()))) {
+            this.load(inputStream, loadOptions);
+        }
+    }
 
     /**
      * version 1.0.

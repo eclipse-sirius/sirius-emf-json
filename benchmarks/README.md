@@ -80,10 +80,11 @@ save-characters load-string load-characters'` selects additional diagnostics:
 DOM construction, buffered emission of a retained DOM, JSON parsing,
 construction of EMF objects from a retained DOM, and the byte/character
 conversions at the document boundary. `save-string-sized` uses the exact
-reference byte length as its initial output capacity. The character variants
-call the ordinary Gson tree adapters but bypass the EMF `InputStream` and
-`OutputStream` lifecycle, including `ResourceHandler`; they are opportunity
-bounds, not compatible replacement APIs. These phases are independent
+reference byte length as its initial output capacity. `load-characters` uses
+`JsonResource.loadFromString`, including the EMF resource lifecycle and JSON
+callbacks; it falls back to bytes when a stream `ResourceHandler` is present.
+`save-characters` bypasses the EMF `OutputStream` lifecycle and is only an
+opportunity bound. These phases are independent
 experiments, not additive timings: retained trees change live memory, and
 direct materialization omits the `Resource.load` lifecycle. Their ratios are
 not guaranteed gains from a hypothetical streaming implementation.

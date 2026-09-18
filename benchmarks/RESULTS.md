@@ -336,14 +336,20 @@ cannot resize an already supplied stream. Direct character output was rejected:
 it allocated 2.08% more and took about 49% longer than the current String path.
 
 Direct character input removed 106.10 MB, or 21.24% of load allocations, by
-avoiding `String.getBytes(UTF_8)`. It is not a drop-in `Resource.load` change:
-the existing `ResourceHandler` contract receives the original `InputStream` in
-`preLoad` and `postLoad`. A Reader API would therefore need an explicit lifecycle
-contract and Sirius Web adoption; no compatible runtime gain is claimed here.
+avoiding `String.getBytes(UTF_8)`. This evidence led to `loadFromString`, which
+preserves the EMF resource lifecycle and all JSON callbacks. When the existing
+`ResourceHandler` contract needs an `InputStream`, the method automatically
+uses the byte path and preserves its `preLoad`/`postLoad` behavior.
 All variants preserved the model/ID fingerprint and the save variants produced
 the same 25,347,610 UTF-8 bytes. These are single-JVM observations without a
 between-JVM confidence interval. Artifacts:
 `target/performance/character-boundary-acceptance`.
+
+Two cross-ordered comparisons of the final API used one fresh JVM per path, two
+warmups and ten measurements. They reduced allocations by 102.77–102.84 MB per
+load, or 20.59–20.71%. Wall and CPU results changed direction with run order,
+so no timing gain is claimed. Artifacts:
+`target/performance/string-load-api-comparison` and its `-reversed` run.
 
 Reusing one immutable class-name `JsonPrimitive` per `EClass` was also rejected.
 A 2+5 screening saved 2.21 MB per save (0.83%) but increased median wall and CPU

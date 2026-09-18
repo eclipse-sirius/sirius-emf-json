@@ -7,7 +7,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
@@ -305,10 +304,7 @@ public class SysMLBenchmark {
         var options = Map.of(JsonResource.OPTION_ID_MANAGER, this.identifiers,
                 JsonResource.OPTION_DISPLAY_DYNAMIC_INSTANCES, true,
                 JsonResource.OPTION_ENCODING, JsonResource.ENCODING_UTF_8);
-        var gson = new GsonBuilder().registerTypeAdapter(List.class, new GsonEObjectDeserializer(resource, options)).disableHtmlEscaping().create();
-        try (var reader = new JsonReader(new StringReader(text))) {
-            gson.fromJson(reader, new TypeToken<List<EObject>>() { }.getType());
-        }
+        resource.loadFromString(text, options);
         return resource;
     }
 
