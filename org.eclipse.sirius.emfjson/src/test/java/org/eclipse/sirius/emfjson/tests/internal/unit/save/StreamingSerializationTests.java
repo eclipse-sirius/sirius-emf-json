@@ -46,6 +46,43 @@ import org.junit.Test;
  */
 public class StreamingSerializationTests {
     @Test
+    public void singleScalarValuesPreserveTheirJsonTypesAndExplicitDefaults() throws IOException {
+        var resource = this.createGraph(false);
+        EObject root = resource.getContents().get(0);
+        EClass type = root.eClass();
+        var dataTypes = List.of(EcorePackage.Literals.ESTRING, EcorePackage.Literals.ECHAR, EcorePackage.Literals.EBOOLEAN,
+                EcorePackage.Literals.EINT, EcorePackage.Literals.EDOUBLE);
+        var values = List.of("<>&é😀\"\n", '€', false, 0, -0.0);
+        for (int index = 0; index < dataTypes.size(); index++) {
+            var attribute = EcoreFactory.eINSTANCE.createEAttribute();
+            attribute.setName("scalar" + index);
+            attribute.setEType(dataTypes.get(index));
+            attribute.setUnsettable(true);
+            type.getEStructuralFeatures().add(attribute);
+        }
+        var nullable = EcoreFactory.eINSTANCE.createEAttribute();
+        nullable.setName("absent");
+        nullable.setEType(EcorePackage.Literals.ESTRING);
+        nullable.setUnsettable(true);
+        type.getEStructuralFeatures().add(nullable);
+        root = EcoreUtil.create(type);
+        resource.getContents().clear();
+        resource.getContents().add(root);
+        for (int index = 0; index < values.size(); index++) {
+            root.eSet(type.getEStructuralFeature("scalar" + index), values.get(index));
+        }
+        root.eSet(nullable, null);
+        EcoreUtil.freeze(type.getEPackage());
+        JsonObject expected = this.parse(this.save(resource, Map.of()));
+        JsonObject streamed = this.parse(this.save(resource, Map.of(JsonResource.OPTION_STREAMING, true)));
+        assertThat(streamed).isEqualTo(expected);
+        JsonObject data = streamed.getAsJsonArray("content").get(0).getAsJsonObject().getAsJsonObject("data");
+        assertThat(data.keySet()).contains("scalar0", "scalar1", "scalar2", "scalar3", "scalar4").doesNotContain("absent");
+        assertThat(data.getAsJsonPrimitive("scalar2").isBoolean()).isTrue();
+        assertThat(data.getAsJsonPrimitive("scalar3").isNumber()).isTrue();
+    }
+
+    @Test
     public void frozenAndMutableGraphsPreserveContentAndRoundTrip() throws IOException {
         for (boolean frozen : new boolean[] {true, false}) {
             var resource = this.createGraph(frozen);

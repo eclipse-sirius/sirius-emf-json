@@ -262,6 +262,18 @@ sampled bytes to output-array growth/copying, including 14.10% to the final
 `toByteArray`, and 22.92% inclusively to SysML adapter lookup. These estimates
 are not exact component counters; inclusive stacks can overlap.
 
+The next change writes single string/character, boolean and numeric attributes
+directly, preserving their existing value-type checks and omission behavior.
+It removes temporary `JsonPrimitive` wrappers without a cache. Two cross-ordered
+1-JVM/2-warmup/10-measurement comparisons observed allocations fall from
+182,686,152 / 182,686,168 to 180,059,288 bytes: 2.63 MB or 1.44% less per save.
+Wall time changed by +0.64% in forward order and -1.17% in reverse order; CPU
+changed by +0.17% and -1.85%. No timing gain is claimed for this small change.
+JSON-tree equality, 25,347,610-byte output size and model/ID validation passed.
+Artifacts: `target/performance/streaming-scalars-acceptance` and `-reversed`.
+Absolute allocation levels vary with JVM optimization, as in earlier runs;
+do not multiply improvements measured in independent campaigns.
+
 ### Optimized JSON versus EMF binary serialization
 
 The diagnostic uses `XMIResourceImpl` with `XMLResource.OPTION_BINARY` and the

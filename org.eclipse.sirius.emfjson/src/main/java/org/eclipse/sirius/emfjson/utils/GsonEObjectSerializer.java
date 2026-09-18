@@ -1086,14 +1086,25 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                         containment = child;
                     }
                 }
+                boolean directScalar = writer != null && (featureKind == STRING_ATTRIBUTE || featureKind == BOOLEAN_ATTRIBUTE || featureKind == NUMBER_ATTRIBUTE)
+                        && !eStructuralFeature.isMany();
+                Object scalar = null;
+                if (directScalar) {
+                    Object attributeValue = this.helper.getValue(eObject, eStructuralFeature);
+                    scalar = switch (featureKind) {
+                        case STRING_ATTRIBUTE -> attributeValue instanceof String ? attributeValue : attributeValue instanceof Character ? attributeValue.toString() : null;
+                        case BOOLEAN_ATTRIBUTE -> attributeValue instanceof Boolean ? attributeValue : null;
+                        default -> attributeValue instanceof Number ? attributeValue : null;
+                    };
+                }
                 JsonElement value = null;
-                if (!containmentFeature) {
+                if (!containmentFeature && !directScalar) {
                     value = this.serializeFeature(eObject, eStructuralFeature, featureKind);
-                } else if (containment == null && !many) {
+                } else if (containmentFeature && containment == null && !many) {
                     value = this.serializeSingleContainmentValue(eObject, referenceValue);
                 }
 
-                if (value != null || containment != null) {
+                if (value != null || containment != null || scalar != null) {
                     String featureName = this.helper.getQName(eStructuralFeature);
                     if (writer == null) {
                         properties.add(featureName, value);
@@ -1103,7 +1114,13 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
                             dataStarted = true;
                         }
                         writer.name(featureName);
-                        if (containment == null) {
+                        if (scalar instanceof String string) {
+                            writer.value(string);
+                        } else if (scalar instanceof Boolean bool) {
+                            writer.value(bool);
+                        } else if (scalar instanceof Number number) {
+                            writer.value(number);
+                        } else if (containment == null) {
                             JSON_ELEMENT_ADAPTER.write(writer, value);
                         } else if (many) {
                             writer.beginArray();
