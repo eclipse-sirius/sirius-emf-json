@@ -81,6 +81,14 @@ experiments, not additive timings: retained trees change live memory, and
 direct materialization omits the `Resource.load` lifecycle. Their ratios
 are not guaranteed gains from a hypothetical streaming implementation.
 
+`OPERATIONS='save binary-save'` compares JSON saving with EMF's native binary
+path through `XMIResourceImpl` and `XMLResource.OPTION_BINARY`. Both operations
+include `ByteArrayOutputStream.toByteArray`; the CSV records each format's real
+output size. The binary result is reloaded and checked with the same persistent
+model and ID fingerprint. This is a codec diagnostic, not evidence that the
+binary format preserves JSON processors, handlers, migrations or database
+compatibility.
+
 ```sh
 /path/to/jdk21/bin/jfr print --json \
   --events emfjson.Measurement,jdk.ExecutionSample,jdk.NativeMethodSample,jdk.ObjectAllocationSample \

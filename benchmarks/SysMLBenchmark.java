@@ -34,6 +34,7 @@ import jdk.jfr.Recording;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMLResource;
@@ -50,8 +51,8 @@ public class SysMLBenchmark {
     private final BenchmarkIDManager identifiers = new BenchmarkIDManager();
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 3 || !List.of("prepare", "save", "load", "save-string", "load-string", "tree", "emit", "parse", "materialize").contains(args[0])) {
-            throw new IllegalArgumentException("prepare|save|load|save-string|load-string|tree|emit|parse|materialize corpus.bin output-directory [warmup=10] [iterations=30] [recording.jfr]");
+        if (args.length < 3 || !List.of("prepare", "save", "binary-save", "load", "save-string", "load-string", "tree", "emit", "parse", "materialize").contains(args[0])) {
+            throw new IllegalArgumentException("prepare|save|binary-save|load|save-string|load-string|tree|emit|parse|materialize corpus.bin output-directory [warmup=10] [iterations=30] [recording.jfr]");
         }
         SysMLLogicStandaloneSetup.doSetup();
         new SysMLBenchmark().run(args);
@@ -79,10 +80,14 @@ public class SysMLBenchmark {
         var expected = Files.readString(directory.resolve("model.sha256"));
         var baseline = Files.readAllBytes(directory.resolve("baseline.json"));
         var source = operation.startsWith("save") || operation.equals("tree") ? this.source(Path.of(args[1])) : null;
+        var binarySource = operation.equals("binary-save") ? this.binarySource(Path.of(args[1])) : null;
         var tree = List.of("emit", "materialize").contains(operation) ? this.parse(baseline) : null;
         var text = operation.equals("load-string") ? new String(baseline, StandardCharsets.UTF_8) : null;
         if (source != null) {
             this.validate(source, expected);
+        }
+        if (binarySource != null) {
+            this.validate(binarySource, expected);
         }
         int warmup = args.length > 3 ? Integer.parseInt(args[3]) : 10;
         int iterations = args.length > 4 ? Integer.parseInt(args[4]) : 30;
@@ -111,6 +116,7 @@ public class SysMLBenchmark {
                 long wall = System.nanoTime();
                 result = switch (operation) {
                     case "save" -> this.save(source);
+                    case "binary-save" -> this.saveBinary(binarySource);
                     case "load" -> this.load(baseline);
                     case "save-string" -> this.output(source).toString(StandardCharsets.UTF_8);
                     case "load-string" -> this.load(text.getBytes(StandardCharsets.UTF_8));
@@ -124,7 +130,8 @@ public class SysMLBenchmark {
                 long consumed = thread.getCurrentThreadCpuTime() - cpu;
                 long allocated = thread.getThreadAllocatedBytes(threadId) - allocation;
                 if (iteration >= 0) {
-                    samples[iteration] = new long[] {elapsed, consumed, allocated, baseline.length};
+                    long outputBytes = result instanceof byte[] bytes ? bytes.length : baseline.length;
+                    samples[iteration] = new long[] {elapsed, consumed, allocated, outputBytes};
                 }
             }
             if (recording != null) {
@@ -134,8 +141,10 @@ public class SysMLBenchmark {
                 recording.dump(Path.of(args[5]));
             }
         }
-        JsonResourceImpl loaded;
-        if (result instanceof JsonResourceImpl resource) {
+        Resource loaded;
+        if (operation.equals("binary-save")) {
+            loaded = this.loadBinary((byte[]) result);
+        } else if (result instanceof JsonResourceImpl resource) {
             loaded = resource;
         } else {
             byte[] bytes = switch (result) {
@@ -169,11 +178,7 @@ public class SysMLBenchmark {
     }
 
     private JsonResourceImpl source(Path path) throws Exception {
-        var binary = new XMIResourceImpl(URI.createFileURI(path.toAbsolutePath().toString()));
-        var resourceSet = new ResourceSetImpl();
-        resourceSet.getPackageRegistry().put(SysMLPackage.eNS_URI, SysMLPackage.eINSTANCE);
-        resourceSet.getResources().add(binary);
-        binary.load(Map.of(XMLResource.OPTION_BINARY, true));
+        var binary = this.binarySource(path);
         var objects = binary.getAllContents();
         while (objects.hasNext()) {
             var object = objects.next();
@@ -188,8 +193,24 @@ public class SysMLBenchmark {
         return resource;
     }
 
+    private XMIResourceImpl binarySource(Path path) throws Exception {
+        var binary = new XMIResourceImpl(URI.createFileURI(path.toAbsolutePath().toString()));
+        var resourceSet = new ResourceSetImpl();
+        resourceSet.getPackageRegistry().put(SysMLPackage.eNS_URI, SysMLPackage.eINSTANCE);
+        resourceSet.getResources().add(binary);
+        binary.load(Map.of(XMLResource.OPTION_BINARY, true));
+        binary.setURI(URI.createURI("sirius:///apollo-11"));
+        return binary;
+    }
+
     private byte[] save(JsonResourceImpl resource) throws Exception {
         return this.output(resource).toByteArray();
+    }
+
+    private byte[] saveBinary(XMIResourceImpl resource) throws Exception {
+        var output = new ByteArrayOutputStream();
+        resource.save(output, Map.of(XMLResource.OPTION_BINARY, true));
+        return output.toByteArray();
     }
 
     private ByteArrayOutputStream output(JsonResourceImpl resource) throws Exception {
@@ -241,14 +262,23 @@ public class SysMLBenchmark {
         return resource;
     }
 
-    private void validate(JsonResourceImpl resource, String expected) throws Exception {
+    private XMIResourceImpl loadBinary(byte[] bytes) throws Exception {
+        var resource = new XMIResourceImpl(URI.createURI("sirius:///apollo-11.bin"));
+        var resourceSet = new ResourceSetImpl();
+        resourceSet.getPackageRegistry().put(SysMLPackage.eNS_URI, SysMLPackage.eINSTANCE);
+        resourceSet.getResources().add(resource);
+        resource.load(new ByteArrayInputStream(bytes), Map.of(XMLResource.OPTION_BINARY, true));
+        return resource;
+    }
+
+    private void validate(Resource resource, String expected) throws Exception {
         if (!resource.getErrors().isEmpty() || !resource.getWarnings().isEmpty()
                 || !expected.equals(this.fingerprint(resource))) {
             throw new IllegalStateException("Round-trip changed IDs, persistent model structure or diagnostics");
         }
     }
 
-    private String fingerprint(JsonResourceImpl resource) throws Exception {
+    private String fingerprint(Resource resource) throws Exception {
         var digest = MessageDigest.getInstance("SHA-256");
         var ids = new HashSet<String>();
         try (var output = new DataOutputStream(new DigestOutputStream(OutputStream.nullOutputStream(), digest))) {
@@ -256,13 +286,13 @@ public class SysMLBenchmark {
             var objects = resource.getAllContents();
             while (objects.hasNext()) {
                 var object = objects.next();
-                var id = resource.getID(object);
+                var id = this.getID(resource, object);
                 if (id == null || !ids.add(id) || resource.getEObject(id) != object) {
                     throw new IllegalStateException("Missing, duplicate or unresolvable ID: " + id);
                 }
                 this.text(output, id);
                 this.text(output, EcoreUtil.getURI(object.eClass()).toString());
-                this.text(output, object.eContainer() == null ? "" : resource.getID(object.eContainer()));
+                this.text(output, object.eContainer() == null ? "" : this.getID(resource, object.eContainer()));
                 for (var feature : object.eClass().getEAllStructuralFeatures()) {
                     if (feature.isDerived() || feature.isTransient() || feature.isVolatile()) {
                         continue;
@@ -282,7 +312,7 @@ public class SysMLBenchmark {
                             if (target.eIsProxy() || target.eResource() != resource) {
                                 throw new IllegalStateException("Unexpected external or unresolved reference: " + feature.getName());
                             }
-                            this.text(output, resource.getID(target));
+                            this.text(output, this.getID(resource, target));
                         }
                     }
                 }
@@ -292,6 +322,13 @@ public class SysMLBenchmark {
             throw new IllegalStateException("Validation loaded an external resource");
         }
         return HexFormat.of().formatHex(digest.digest());
+    }
+
+    private String getID(Resource resource, EObject object) {
+        if (resource instanceof JsonResourceImpl jsonResource) {
+            return jsonResource.getID(object);
+        }
+        return ((XMLResource) resource).getID(object);
     }
 
     private void text(DataOutputStream output, String value) throws Exception {

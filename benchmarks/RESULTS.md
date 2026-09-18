@@ -48,6 +48,7 @@ dedicated benchmark machine or justify disregarding uncertainty intervals.
 | Per-write locking remains after character buffering | Cross-ordered 2+10 save comparisons and a post-change JFR | Preserve encoding, close/flush failures and resource-handler stream visibility | Accepted: save wall time fell by 17.3% in the final acceptance order; the reverse order observed 19.2% |
 | Default Gson arrays over-allocate short EMF reference lists | Cross-ordered 2+10 save comparisons | Preserve list traversal and callback order; use capacity only | Accepted: allocation fell by 1.93% in the final order and 1.10% in reverse order |
 | Gson tree construction dominates remaining allocations | Allocation profiles after simpler changes | Existing callbacks accept complete JSON trees | Pending |
+| EMF binary serialization provides an order-of-magnitude reference | Cross-ordered 2+10 codec comparisons | Compare equivalent persistent state and extrinsic IDs, not format compatibility | Binary was 25–27% slower, allocated 60.8% less and produced 47.7% fewer bytes than optimized JSON |
 
 ## Five-fork phase measurements
 
@@ -231,6 +232,36 @@ regime. No robust allocation reduction is therefore attributed to the plan.
 Every run produced the same 25,347,610 JSON bytes and passed model validation.
 These remain separate single-JVM observations without a between-JVM confidence
 interval; the 0.28% result in particular is within ordinary run-to-run noise.
+
+### Optimized JSON versus EMF binary serialization
+
+The diagnostic uses `XMIResourceImpl` with `XMLResource.OPTION_BINARY` and the
+same Apollo model, persistent-state fingerprint and extrinsic IDs. Preparation,
+disk access and validation remain outside timing. Both serializers allocate a
+fresh `ByteArrayOutputStream`, save the resource and call `toByteArray` inside
+the measured boundary. JSON and binary run in separate JVMs with one JVM per
+format, two warmups and ten measurements. The resource URI is
+`sirius:///apollo-11` for both formats.
+
+| Order | Format | Wall ms | CPU ms | Allocated bytes | Output bytes |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Binary then JSON | Optimized JSON | 226.345 | 225.220 | 264,320,016 | 25,347,610 |
+| Binary then JSON | EMF binary | 287.972 | 287.951 | 103,717,488 | 13,248,226 |
+| JSON then binary | Optimized JSON | 222.563 | 220.286 | 264,320,016 | 25,347,610 |
+| JSON then binary | EMF binary | 278.641 | 278.635 | 103,717,488 | 13,248,226 |
+
+In these two cross-ordered comparisons, binary saving was 25.20–27.23% slower
+in wall time and 26.49–27.85% slower in CPU than the optimized JSON serializer.
+It allocated 60.76% fewer bytes and produced a 47.73% smaller representation.
+The two codecs therefore remain in the same time order of magnitude on Apollo;
+binary is an allocation and size reference, not a faster-time lower bound.
+
+The binary loader reproduced all checked attributes, ordered references,
+containment, unsettable state and IDs without loading an external resource.
+This semantic fingerprint does not establish compatibility with JSON-specific
+processors, object handlers, serialization listeners, migrations or PostgreSQL
+content. The figures are separate single-JVM observations without a
+between-JVM confidence interval.
 
 ## Compatibility ledger
 
