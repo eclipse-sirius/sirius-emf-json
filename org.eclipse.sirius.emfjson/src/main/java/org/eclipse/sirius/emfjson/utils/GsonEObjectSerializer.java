@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2025 Obeo.
+ * Copyright (c) 2020, 2026 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -1418,8 +1418,13 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         JsonElement jsonElement = null;
         JsonArray jsonArray = new JsonArray();
         Object referenceValue = this.helper.getValue(eObject, eReference);
+        int referenceType = -1;
         for (EObject value : (InternalEList<? extends EObject>) referenceValue) {
-            switch (this.docKindMany(eObject, eReference)) {
+            // Classify once, after fetching the first value.
+            if (referenceType == -1) {
+                referenceType = this.docKindMany(eObject, eReference);
+            }
+            switch (referenceType) {
             case SAME_DOC:
                 String id = this.helper.getIDREF(value);
                 id = this.removeFragmentSeparator(id);
