@@ -4,10 +4,12 @@
 
 === Breaking changes
 
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/19[#19] Serialization hooks must keep reference-list contents and target resource/proxy membership stable while that list is being saved. IDs and URIs can still be customized.
 
 
 === New features and improvements
 
+- https://github.com/eclipse-sirius/sirius-emf-json/issues/19[#19] Classify many-valued non-containment references once per list, avoiding quadratic scans while preserving whole-list JSON encoding and custom hooks.
 
 
 == v2.5.4
