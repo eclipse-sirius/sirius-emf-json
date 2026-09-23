@@ -1,0 +1,15 @@
+{
+  "ns": {
+    "ecore": "urn:legacy:ecore"
+  },
+  "content": [
+    {
+      "eClass": "ecore:EPackage",
+      "data": {
+        "name": "migrated",
+        "nsURI": "urn:migrated",
+        "nsPrefix": "migrated"
+      }
+    }
+  ]
+}

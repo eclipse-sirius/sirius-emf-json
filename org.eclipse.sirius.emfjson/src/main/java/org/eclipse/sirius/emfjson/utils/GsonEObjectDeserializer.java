@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2025 Obeo.
+ * Copyright (c) 2020, 2026 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -226,6 +226,9 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     public List<EObject> deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext context) throws JsonParseException {
         JsonObject jsonRoot = jsonElement.getAsJsonObject();
 
+        // Processors may migrate namespace declarations, which must happen before prefixes are resolved below.
+        this.jsonResourceProcessor.preDeserialization(this.resource, jsonRoot);
+
         // namespace
         JsonObject jsonNameSpace = jsonRoot.getAsJsonObject(IGsonConstants.NS);
         if (jsonNameSpace != null) {
@@ -258,8 +261,6 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                 }
             }
         }
-
-        this.jsonResourceProcessor.preDeserialization(this.resource, jsonRoot);
 
         // json content
         this.deserializeContent(jsonRoot);

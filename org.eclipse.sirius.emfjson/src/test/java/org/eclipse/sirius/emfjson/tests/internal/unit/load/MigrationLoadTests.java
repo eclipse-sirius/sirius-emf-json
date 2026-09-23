@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Obeo.
+ * Copyright (c) 2025, 2026 Obeo.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,14 +10,19 @@
  *******************************************************************************/
 package org.eclipse.sirius.emfjson.tests.internal.unit.load;
 
+import com.google.gson.JsonObject;
+
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.emf.ecore.EcorePackage;
+import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.BasicExtendedMetaData;
 import org.eclipse.emf.ecore.util.ExtendedMetaData;
 import org.eclipse.sirius.emfjson.resource.JsonResource;
 import org.eclipse.sirius.emfjson.tests.internal.AbstractEMFJsonTests;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -66,6 +71,24 @@ public class MigrationLoadTests extends AbstractEMFJsonTests {
         this.options.put(JsonResource.OPTION_EXTENDED_META_DATA, metaData);
         this.options.put(JsonResource.OPTION_JSON_RESSOURCE_PROCESSOR, jsonResourceProcessor);
         this.testLoad("LibraryWithContainmentAndNonContainmentEReference.xmi"); //$NON-NLS-1$
+    }
+
+    /**
+     * Migrates a namespace before resolving the prefix used by a root object.
+     */
+    @Test
+    public void testChangeNamespaceBeforePrefixResolution() {
+        var jsonResourceProcessor = new JsonResource.IJsonResourceProcessor.NoOp() {
+            @Override
+            public void preDeserialization(JsonResource resource, JsonObject jsonObject) {
+                jsonObject.getAsJsonObject("ns").addProperty("ecore", EcorePackage.eNS_URI); //$NON-NLS-1$ //$NON-NLS-2$
+            }
+        };
+
+        this.options.put(JsonResource.OPTION_JSON_RESSOURCE_PROCESSOR, jsonResourceProcessor);
+        Resource resource = this.loadResource(this.getRootPath() + "NamespaceMigration.json", java.util.List.of(EcorePackage.eINSTANCE)); //$NON-NLS-1$
+
+        Assert.assertEquals(EcorePackage.Literals.EPACKAGE, resource.getContents().get(0).eClass());
     }
 
 }
