@@ -1,12 +1,22 @@
 = Changelog
 
-== v2.5.5 (work in progress)
+== v2.5.5
+
+=== Deprecation warning
+
+None.
 
 === Breaking changes
 
 - https://github.com/eclipse-sirius/sirius-emf-json/issues/84[#84] `IJsonResourceProcessor.preDeserialization(...)` is now called before namespace resolution. Processors relying on namespace prefixes already being available must be updated.
 
-=== New features and improvements
+=== Dependency update
+
+None.
+
+=== New Features and Improvements
+
+None.
 
 === Bug fixes
 
