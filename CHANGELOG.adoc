@@ -21,6 +21,13 @@ None.
 === Bug fixes
 
 - https://github.com/eclipse-sirius/sirius-emf-json/issues/84[#84] Process document migrations before namespace resolution.
+- Add an optional, reproducible SysML serialization benchmark with allocation measurements and isolated JFR recordings.
+- Reduce JSON save allocations by buffering character encoding when no resource handler observes the output stream.
+- Reduce JSON save time by avoiding per-write synchronization in the private character buffer.
+- Reduce JSON save allocations by pre-sizing arrays from known reference-list sizes.
+- Reduce save overhead for excluded features of frozen EClasses while preserving dynamic options and custom metadata behavior.
+- Reduce save dispatch overhead with session-scoped plans for frozen standard EClass features.
+- Add `JsonResource.loadFromString` to avoid an intermediate UTF-8 byte array.
 
 
 == v2.5.4
