@@ -81,6 +81,12 @@ public interface JsonResource extends Resource {
     String OPTION_SAVE_UNSETTED_FEATURES = "saveUnsettedFeatures"; //$NON-NLS-1$
 
     /**
+     * Saves EObject metadata as {@code @id} and {@code @eClass}, with structural features directly on the object.
+     * Defaults to {@code false}, which keeps the {@code id}, {@code eClass}, and {@code data} layout.
+     */
+    String OPTION_SAVE_FLAT_EOBJECTS = "saveFlatEObjects"; //$NON-NLS-1$
+
+    /**
      * Specify an {@link EStructuralFeaturesFilter} to use during the serialization/deserialization to force the list of
      * the {@link EStructuralFeature} to take into account.
      */
