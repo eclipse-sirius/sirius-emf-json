@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2025 Obeo.
+ * Copyright (c) 2020, 2026 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -21,18 +21,22 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
@@ -47,6 +51,49 @@ import org.eclipse.sirius.emfjson.utils.GsonEObjectSerializer;
  * @author <a href="mailto:stephane.begaudeau@obeo.fr">Stephane Begaudeau</a>
  */
 public class JsonResourceImpl extends ResourceImpl implements JsonResource {
+
+    /**
+     * Passes characters through the ResourceImpl load lifecycle, encoding them only if a subclass reads bytes.
+     * Direct character access is safe only before byte access, which may consume part of the input.
+     */
+    private static final class LazyEncodingInputStream extends InputStream {
+
+        private final String content;
+
+        private final String encoding;
+
+        private ByteArrayInputStream encodedInputStream;
+
+        LazyEncodingInputStream(String content, String encoding) {
+            this.content = content;
+            this.encoding = encoding;
+        }
+
+        @Override
+        public int read() throws IOException {
+            return this.getOrCreateEncodedStream().read();
+        }
+
+        @Override
+        public int read(byte[] bytes, int offset, int length) throws IOException {
+            return this.getOrCreateEncodedStream().read(bytes, offset, length);
+        }
+
+        StringReader openCharacterReader() {
+            return new StringReader(this.content);
+        }
+
+        boolean canReadCharactersDirectly() {
+            return this.encodedInputStream == null;
+        }
+
+        private ByteArrayInputStream getOrCreateEncodedStream() throws UnsupportedEncodingException {
+            if (this.encodedInputStream == null) {
+                this.encodedInputStream = new ByteArrayInputStream(this.content.getBytes(this.encoding));
+            }
+            return this.encodedInputStream;
+        }
+    }
 
     /**
      * The map from id to {@link EObject}. It is used to store IDs when {@link IDManager} are used to handle id when an
@@ -65,6 +112,39 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
     private boolean useID;
 
     private boolean useIDAsURIFragment;
+
+    @Override
+    public void loadFromString(String content, Map<?, ?> options) throws IOException {
+        if (this.isLoaded()) {
+            return;
+        }
+        Objects.requireNonNull(content);
+
+        // Match the option precedence of ResourceImpl.load followed by doLoad.
+        Map<Object, Object> effectiveLoadOptions = new HashMap<>(this.resourceOptions);
+        if (this.defaultLoadOptions != null) {
+            effectiveLoadOptions.putAll(this.defaultLoadOptions);
+        }
+        if (options != null) {
+            effectiveLoadOptions.putAll(options);
+        }
+
+        Object encoding = effectiveLoadOptions.get(JsonResource.OPTION_ENCODING);
+        if (encoding == null) {
+            encoding = JsonResource.ENCODING_UTF_8;
+        }
+
+        // Handlers require the ordinary byte stream, including its availability and consumption semantics.
+        if (effectiveLoadOptions.get(JsonResource.OPTION_RESOURCE_HANDLER) != null) {
+            try (var inputStream = new ByteArrayInputStream(content.getBytes(encoding.toString()))) {
+                this.load(inputStream, options);
+            }
+        } else {
+            try (var inputStream = new LazyEncodingInputStream(content, encoding.toString())) {
+                this.load(inputStream, options);
+            }
+        }
+    }
 
     /**
      * The constructor. <br/>
@@ -316,7 +396,11 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
         JsonReader reader = null;
 
         try {
-            reader = new JsonReader(new InputStreamReader(inputStream, encoding.toString()));
+            if (inputStream instanceof LazyEncodingInputStream stringInputStream && stringInputStream.canReadCharactersDirectly()) {
+                reader = new JsonReader(stringInputStream.openCharacterReader());
+            } else {
+                reader = new JsonReader(new InputStreamReader(inputStream, encoding.toString()));
+            }
 
             gson.fromJson(reader, typeToken.getType());
 
@@ -373,7 +457,9 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
         Gson gson = gsonBuilder.disableHtmlEscaping().create();
 
         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, encoding.toString());
-        JsonWriter writer = new JsonWriter(outputStreamWriter);
+        // Extra buffering would change the bytes visible to resource handlers in postSave.
+        Writer characterWriter = handler == null ? new UnsynchronizedBufferedWriter(outputStreamWriter) : outputStreamWriter;
+        JsonWriter writer = new JsonWriter(characterWriter);
         if (prettyPrintingIndent instanceof String) {
             writer.setIndent((String) prettyPrintingIndent);
         }
@@ -390,6 +476,83 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
 
         if (objectSerializer.getDanglingHREFException() != null) {
             throw new IOWrappedException(objectSerializer.getDanglingHREFException());
+        }
+    }
+
+    /**
+     * Buffers character writes for a single save operation without synchronization.
+     */
+    private static final class UnsynchronizedBufferedWriter extends Writer {
+
+        private static final int BUFFER_SIZE = 8192;
+
+        private final Writer delegate;
+
+        private final char[] buffer = new char[BUFFER_SIZE];
+
+        private int bufferedCharacterCount;
+
+        private UnsynchronizedBufferedWriter(Writer delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(int character) throws IOException {
+            if (this.bufferedCharacterCount == this.buffer.length) {
+                this.flushBuffer();
+            }
+            this.buffer[this.bufferedCharacterCount++] = (char) character;
+        }
+
+        @Override
+        public void write(char[] characters, int offset, int length) throws IOException {
+            Objects.checkFromIndexSize(offset, length, characters.length);
+            if (length >= this.buffer.length) {
+                this.flushBuffer();
+                this.delegate.write(characters, offset, length);
+                return;
+            }
+            if (length > this.buffer.length - this.bufferedCharacterCount) {
+                this.flushBuffer();
+            }
+            System.arraycopy(characters, offset, this.buffer, this.bufferedCharacterCount, length);
+            this.bufferedCharacterCount += length;
+        }
+
+        @Override
+        public void write(String string, int offset, int length) throws IOException {
+            Objects.checkFromIndexSize(offset, length, string.length());
+            if (length >= this.buffer.length) {
+                this.flushBuffer();
+                this.delegate.write(string, offset, length);
+                return;
+            }
+            if (length > this.buffer.length - this.bufferedCharacterCount) {
+                this.flushBuffer();
+            }
+            string.getChars(offset, offset + length, this.buffer, this.bufferedCharacterCount);
+            this.bufferedCharacterCount += length;
+        }
+
+        @Override
+        public void flush() throws IOException {
+            this.flushBuffer();
+            this.delegate.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            // Close the delegate even if flushing fails.
+            try (Writer output = this.delegate) {
+                this.flushBuffer();
+            }
+        }
+
+        private void flushBuffer() throws IOException {
+            if (this.bufferedCharacterCount > 0) {
+                this.delegate.write(this.buffer, 0, this.bufferedCharacterCount);
+                this.bufferedCharacterCount = 0;
+            }
         }
     }
 

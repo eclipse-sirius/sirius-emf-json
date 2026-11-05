@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2025 Obeo.
+ * Copyright (c) 2020, 2026 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -16,9 +16,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -36,6 +39,44 @@ import org.eclipse.emf.ecore.resource.Resource;
  * @author <a href="mailto:stephane.begaudeau@obeo.fr">Stephane Begaudeau</a>
  */
 public interface JsonResource extends Resource {
+
+    /**
+     * Loads JSON content supplied as a string. Does nothing if the resource is already loaded.
+     * <p>
+     * The default implementation encodes the content using {@link #OPTION_ENCODING}, or UTF-8 when
+     * unspecified, and delegates to {@link #load(InputStream, Map)} with a copy of the options.
+     * Implementations may consume the characters directly to avoid this conversion, falling back to
+     * the stream path when options require access to the {@link InputStream} lifecycle. The encoding
+     * option applies only to the stream path.
+     * </p>
+     *
+     * @param content
+     *            the JSON content
+     * @param options
+     *            the load options, or {@code null}; the supplied map is not modified
+     * @throws IOException
+     *             if loading fails
+     * @since 2.5.5
+     */
+    default void loadFromString(String content, Map<?, ?> options) throws IOException {
+        if (this.isLoaded()) {
+            return;
+        }
+
+        Object encoding = options == null ? null : options.get(JsonResource.OPTION_ENCODING);
+        if (encoding == null) {
+            encoding = JsonResource.ENCODING_UTF_8;
+        }
+
+        Map<Object, Object> streamLoadOptions = new HashMap<>();
+        if (options != null) {
+            streamLoadOptions.putAll(options);
+        }
+        streamLoadOptions.put(JsonResource.OPTION_ENCODING, encoding);
+        try (var inputStream = new ByteArrayInputStream(content.getBytes(encoding.toString()))) {
+            this.load(inputStream, streamLoadOptions);
+        }
+    }
 
     /**
      * version 1.0.
