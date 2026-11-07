@@ -24,6 +24,11 @@ public interface IGsonConstants {
     String ECLASS = "eClass"; //$NON-NLS-1$
 
     /**
+     * The eClass of an EObject in the flat layout.
+     */
+    String FLAT_ECLASS = "@eClass"; //$NON-NLS-1$
+
+    /**
      * The URI of the EObject.
      */
     String URI = "uri"; //$NON-NLS-1$
@@ -203,5 +208,10 @@ public interface IGsonConstants {
      * The ID for the EObject.
      */
     String ID = "id"; //$NON-NLS-1$
+
+    /**
+     * The ID of an EObject in the flat layout.
+     */
+    String FLAT_ID = "@id"; //$NON-NLS-1$
 
 }

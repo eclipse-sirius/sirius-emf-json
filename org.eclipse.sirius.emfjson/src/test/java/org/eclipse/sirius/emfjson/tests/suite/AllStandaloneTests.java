@@ -16,6 +16,7 @@ import org.eclipse.sirius.emfjson.tests.internal.integration.JsonSerializationAP
 import org.eclipse.sirius.emfjson.tests.internal.integration.SerializeCommonObjectWithResourceAsAttribute;
 import org.eclipse.sirius.emfjson.tests.internal.integration.StandaloneIntegrationTests;
 import org.eclipse.sirius.emfjson.tests.internal.options.EObjectHandlerTests;
+import org.eclipse.sirius.emfjson.tests.internal.options.FlatEObjectFormatTests;
 import org.eclipse.sirius.emfjson.tests.internal.options.IDManagerOptionsTests;
 import org.eclipse.sirius.emfjson.tests.internal.options.SchemaLocationTests;
 import org.eclipse.sirius.emfjson.tests.internal.unit.RemoveObjectTests;
@@ -62,7 +63,7 @@ import junit.textui.TestRunner;
         TypeParametersSaveTests.class, StandaloneIntegrationTests.class, AnnotationLoadTests.class, AttributesLoadTests.class, ClassLoadTests.class, DataTypeLoadTests.class,
         EnumerationsLoadTests.class, OperationLoadTests.class, ContainmentReferencesLoadTests.class, NonContainmentReferencesLoadTests.class, DeserializeOptionsTests.class, SubPackageLoadTests.class,
         TypeParametersLoadTests.class, EObjectHandlerTests.class, SchemaLocationTests.class, JsonSerializationAPITests.class, SerializeCommonObjectWithResourceAsAttribute.class,
-        IDManagerOptionsTests.class, RemoveObjectTests.class })
+        IDManagerOptionsTests.class, FlatEObjectFormatTests.class, RemoveObjectTests.class })
 public final class AllStandaloneTests {
 
     /**

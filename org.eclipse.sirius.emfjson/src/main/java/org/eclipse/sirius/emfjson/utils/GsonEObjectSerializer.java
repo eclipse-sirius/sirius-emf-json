@@ -274,7 +274,7 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         JsonObject jsonObject = new JsonObject();
         JsonObject structualFeaturesSerialized = this.serializeEAllStructuralFeatures(ePackage);
         if (structualFeaturesSerialized.entrySet().size() != 0) {
-            jsonObject.add(IGsonConstants.DATA, structualFeaturesSerialized);
+            this.addStructuralFeatures(jsonObject, structualFeaturesSerialized);
         }
         return jsonObject;
     }
@@ -289,26 +289,37 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
     private JsonElement serializationEClass(EObject eObject) {
         JsonObject jsonObject = new JsonObject();
         EClass eClass = eObject.eClass();
+        boolean flat = Boolean.TRUE.equals(this.options.get(JsonResource.OPTION_SAVE_FLAT_EOBJECTS));
 
         // Handle eObject id
         Object supplierObject = this.options.get(JsonResource.OPTION_ID_MANAGER);
         if (supplierObject instanceof IDManager) {
             IDManager idManager = (IDManager) supplierObject;
             String id = idManager.getOrCreateId(eObject);
-            jsonObject.add(IGsonConstants.ID, new JsonPrimitive(id));
+            jsonObject.add(flat ? IGsonConstants.FLAT_ID : IGsonConstants.ID, new JsonPrimitive(id));
         }
 
         // element Handler here
 
         String name = this.helper.getQName(eClass);
 
-        jsonObject.add(IGsonConstants.ECLASS, new JsonPrimitive(name));
+        jsonObject.add(flat ? IGsonConstants.FLAT_ECLASS : IGsonConstants.ECLASS, new JsonPrimitive(name));
 
         JsonObject structualFeaturesSerialized = this.serializeEAllStructuralFeatures(eObject);
         if (structualFeaturesSerialized.entrySet().size() != 0) {
-            jsonObject.add(IGsonConstants.DATA, structualFeaturesSerialized);
+            this.addStructuralFeatures(jsonObject, structualFeaturesSerialized);
         }
         return jsonObject;
+    }
+
+    private void addStructuralFeatures(JsonObject jsonObject, JsonObject structuralFeatures) {
+        if (Boolean.TRUE.equals(this.options.get(JsonResource.OPTION_SAVE_FLAT_EOBJECTS))) {
+            for (Entry<String, JsonElement> entry : structuralFeatures.entrySet()) {
+                jsonObject.add(entry.getKey(), entry.getValue());
+            }
+        } else {
+            jsonObject.add(IGsonConstants.DATA, structuralFeatures);
+        }
     }
 
     /**

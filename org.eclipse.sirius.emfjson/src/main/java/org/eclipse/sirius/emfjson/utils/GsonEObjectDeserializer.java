@@ -402,8 +402,8 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
     private EObject loadObject(JsonObject object, boolean isTopObject) {
         EObject eObject = null;
 
-        JsonElement eClassJsonElement = object.get(IGsonConstants.ECLASS);
-        if (!eClassJsonElement.isJsonNull()) {
+        JsonElement eClassJsonElement = object.has(IGsonConstants.FLAT_ECLASS) ? object.get(IGsonConstants.FLAT_ECLASS) : object.get(IGsonConstants.ECLASS);
+        if (eClassJsonElement != null && !eClassJsonElement.isJsonNull()) {
             EClassifier eClassifier = this.getEClass(object, eClassJsonElement);
             eObject = this.deserializeEClassifier(eClassifier, object, isTopObject);
         }
@@ -413,7 +413,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
                 this.eObjectHandler.processDeserializedContent(eObject, object);
             }
 
-            JsonElement idJsonElement = object.get(IGsonConstants.ID);
+            JsonElement idJsonElement = object.has(IGsonConstants.FLAT_ECLASS) ? object.get(IGsonConstants.FLAT_ID) : object.get(IGsonConstants.ID);
             if (idJsonElement != null && this.resource != null) {
                 this.resource.setID(eObject, idJsonElement.getAsString());
             }
@@ -442,7 +442,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
             if (addToContent) {
                 this.addToContent(eObject);
             }
-            JsonObject properties = jsonObject.getAsJsonObject(IGsonConstants.DATA);
+            JsonObject properties = jsonObject.has(IGsonConstants.FLAT_ECLASS) ? jsonObject : jsonObject.getAsJsonObject(IGsonConstants.DATA);
 
             this.deserializeData(properties, eClass, eObject);
         }
@@ -864,7 +864,7 @@ public class GsonEObjectDeserializer implements JsonDeserializer<List<EObject>> 
             } else if (referenceName.equals(IGsonConstants.DETAILS)) {
                 eReferenceValue = this.loadReferences(EcorePackage.Literals.ESTRING_TO_STRING_MAP_ENTRY, jsonObject);
             } else if (referenceName.equals(IGsonConstants.ESUBPACKAGES)) {
-                JsonObject properties = jsonObject.getAsJsonObject(IGsonConstants.DATA);
+                JsonObject properties = jsonObject.has(IGsonConstants.DATA) ? jsonObject.getAsJsonObject(IGsonConstants.DATA) : jsonObject;
                 eReferenceValue = this.loadReferences(EcorePackage.Literals.EPACKAGE, properties);
                 EPackage ePackage = (EPackage) eReferenceValue;
                 this.resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);
