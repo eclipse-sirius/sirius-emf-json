@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2025 Obeo.
+ * Copyright (c) 2020, 2026 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -32,6 +32,11 @@ import org.eclipse.emf.ecore.resource.Resource;
 
 /**
  * The Json resource.
+ * <p>
+ * Saving classifies each many-valued non-containment reference list once. Custom helpers and serialization hooks
+ * may customize IDs and URIs, but must not change the list's contents or its targets' resource membership or proxy
+ * state while that list is being serialized. Classification is recomputed for each list on every save.
+ * </p>
  *
  * @author <a href="mailto:stephane.begaudeau@obeo.fr">Stephane Begaudeau</a>
  */
