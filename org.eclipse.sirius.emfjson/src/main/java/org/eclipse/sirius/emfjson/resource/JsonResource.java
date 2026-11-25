@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2025 Obeo.
+ * Copyright (c) 2020, 2026 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -56,6 +56,12 @@ public interface JsonResource extends Resource {
      * UTF-8.
      */
     String ENCODING_UTF_8 = "utf-8"; //$NON-NLS-1$
+
+    /**
+     * The maximum number of nested JSON arrays and objects allowed when loading a resource. The option value must be a
+     * positive {@link Integer}. If omitted, Gson's default nesting limit applies.
+     */
+    String OPTION_JSON_NESTING_LIMIT = "jsonNestingLimit"; //$NON-NLS-1$
 
     /**
      * Give number of space indent to activate pretty printing @see {@link JsonResource#INDENT_2_SPACES}

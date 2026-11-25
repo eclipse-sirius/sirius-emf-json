@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2025 Obeo.
+ * Copyright (c) 2020, 2026 Obeo.
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -282,6 +282,8 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
     /**
      * {@inheritDoc}
      *
+     * @throws IOException
+     *             if the JSON cannot be read or parsed, or the nesting limit option is invalid
      * @see org.eclipse.emf.ecore.resource.impl.ResourceImpl#doLoad(java.io.InputStream, java.util.Map)
      */
     @Override
@@ -312,11 +314,13 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
         gsonBuilder.registerTypeAdapter(List.class, new GsonEObjectDeserializer(this, loadOptions));
         Gson gson = gsonBuilder.disableHtmlEscaping().create();
 
-        // Check if reader care of indent.
-        JsonReader reader = null;
-
-        try {
-            reader = new JsonReader(new InputStreamReader(inputStream, encoding.toString()));
+        try (JsonReader reader = new JsonReader(new InputStreamReader(inputStream, encoding.toString()))) {
+            if (loadOptions.containsKey(JsonResource.OPTION_JSON_NESTING_LIMIT)) {
+                if (!(loadOptions.get(JsonResource.OPTION_JSON_NESTING_LIMIT) instanceof Integer limit) || limit <= 0) {
+                    throw new IOException(JsonResource.OPTION_JSON_NESTING_LIMIT + " must be a positive integer"); //$NON-NLS-1$
+                }
+                reader.setNestingLimit(limit);
+            }
 
             gson.fromJson(reader, typeToken.getType());
 
@@ -324,11 +328,7 @@ public class JsonResourceImpl extends ResourceImpl implements JsonResource {
                 handler.postLoad(this, inputStream, loadOptions);
             }
         } catch (JsonIOException | JsonSyntaxException e) {
-            e.printStackTrace();
-        }  finally {
-            if (reader != null) {
-                reader.close();
-            }
+            throw new IOException("Failed to load JSON resource " + this.getURI(), e); //$NON-NLS-1$
         }
 
     }
